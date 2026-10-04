@@ -313,8 +313,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none}
 <div id="modal" class="modal" hidden></div>
 <div id="toast" class="toast" role="status" hidden></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="/config.js"></script>
 <script>
 /* ---------- Catálogos ---------- */
 const SECC = {
@@ -577,7 +575,7 @@ function listaParaEmpezar(){
     {ok: !!S.quien, t:'Escribe tu nombre', d:'Para saber quién hace cada cambio.', b:'<button class="btn sm" data-a="quien">Escribir</button>'},
     {ok: !hayEjemplos(), t:'Quita los datos de ejemplo', d:'Deja la app lista para lo de tu casa.', b:'<button class="btn sm" data-a="quitarEjemplos">Quitar</button>'},
     {ok: reales(S.productos).length >= 20, t:'Carga el inventario inicial', d:`Lugar por lugar, con el catálogo, una lista o fotos. Llevas ${reales(S.productos).length}.`, b:'<button class="btn sm" data-a="carga">Cargar</button>'},
-    {ok: (S.miembros||[]).length >= 2, t:'Invita a la familia', d:'Agrega el correo de cada persona y envíales el enlace de la app.', b:'<button class="btn sm" data-a="tab" data-t="gastos">Agregar correos</button>'},
+    {ok: (S.config.familia||[]).length >= 2, t:'Invita a la familia', d:'Envíales la dirección de la app y la clave de la casa. Cada uno escribe su nombre al entrar.', b:''},
     {ok: reales(S.compras).some(c => String(c.fecha).startsWith(mes)), t:'Registra lo que ya gastaste este mes', d:'Así el presupuesto arranca con la cifra real.', b:`<button class="btn sm" data-a="${S.imgs?'factura':'gasto'}">Registrar</button>`},
     {ok: reales(S.recetas).length >= 3, t:'Guarda 3 recetas de la casa', d:'Las comidas que más hacen. La app te dirá si hay todo.', b:'<button class="btn sm" data-a="nuevaReceta">Agregar</button>'}
   ];
@@ -837,10 +835,9 @@ function vGastos(){
       <div><button class="btn" data-a="aGuardar">Guardar ajustes</button></div>
     </section>
     <section class="card">
-      <div class="card-h"><div><h2>Correos con acceso</h2><p class="muted">Solo estos correos pueden entrar a la app. Agrega el de cada persona de la casa y envíale el enlace.</p></div></div>
-      <div class="chips">${(S.miembros||[]).map(m => `<span class="chip">${esc(m)}${m === S.email ? ' <span class="c">(tú)</span>' : ` <button class="x sm" data-a="quitarMiembro" data-e="${esc(m)}" aria-label="Quitar ${esc(m)}" style="width:20px;height:20px;font-size:15px">×</button>`}</span>`).join('')}</div>
-      <div class="addrow"><input id="aMiembro" type="email" placeholder="correo@ejemplo.com" aria-label="Correo para dar acceso"><button class="btn ghost" data-a="agregarMiembro">${ico('mas')} Dar acceso</button></div>
-      <div class="kv small"><span class="muted">Entraste como ${esc(S.email||'')}</span><button class="btn sm ghost" data-a="salir">Cerrar sesión</button></div>
+      <div class="card-h"><div><h2>Acceso de la familia</h2><p class="muted">Para entrar se usa la <b>clave de la casa</b>. Compártela solo con la familia, junto con la dirección de la app.</p></div></div>
+      <p class="small muted">Para cambiar la clave: en Vercel, abre el proyecto → Settings → Environment Variables → <b>CLAVE_CASA</b>, cámbiala y vuelve a publicar (Deployments → Redeploy). Para cerrar la sesión de todos, cambia también <b>SESSION_SECRET</b>.</p>
+      <div><button class="btn sm ghost" data-a="salir">Cerrar sesión en este dispositivo</button></div>
     </section>`;
 }
 
@@ -1598,52 +1595,60 @@ document.addEventListener('keydown', e => {
 let tt;
 function toast(t){ const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(tt); tt = setTimeout(() => el.hidden = true, 3200); }
 
-/* ---------- Supabase: almacén de documentos con la misma forma que usa la app ---------- */
-let sb = null;
-function crearDB(sb){
-  const cache = {}, cargas = {}, subs = new Set();
+/* ---------- Conexión con la base de datos (funciones de Vercel + Neon) ---------- */
+async function api(path, opciones = {}){
+  let r;
+  try { r = await fetch(path, {credentials:'same-origin', headers:{'content-type':'application/json'}, ...opciones}); }
+  catch { throw {code:'unavailable', message:'Sin internet'}; }
+  if (r.status === 401) { if (S.pantalla === 'app') { S.pantalla = 'login'; render(); } throw {code:'sesion', message:'Sesión vencida'}; }
+  const cuerpo = await r.json().catch(() => ({}));
+  if (!r.ok) throw {code: r.status === 404 || r.status === 400 ? 'invalid_argument' : 'unavailable', message: cuerpo.error || r.statusText};
+  return cuerpo;
+}
+/* Almacén local con la misma forma que usa la app; se sincroniza cada 15 s y al volver a la app */
+function crearDB(){
+  const cache = {}, subs = new Set(), pendientes = new Map();
+  let cursor = null;
   const nuevoId = () => (crypto.randomUUID ? crypto.randomUUID().replace(/-/g,'').slice(0,20) : Date.now().toString(36) + Math.random().toString(36).slice(2,10));
   const mapa = c => cache[c] || (cache[c] = new Map());
   const avisar = c => subs.forEach(s => s.col === c && s.fn());
   const poner = (c, id, data) => { if (data == null) mapa(c).delete(id); else mapa(c).set(id, data); avisar(c); };
-  const fallo = e => ({code: /42501|permission|policy|row-level/i.test(`${e.code} ${e.message}`) ? 'invalid_argument' : 'unavailable', message: e.message});
-  function cargar(c){
-    return cargas[c] || (cargas[c] = (async () => {
-      for (let desde = 0; ; desde += 1000) {
-        const {data, error} = await sb.from('docs').select('id,data').eq('coleccion', c).range(desde, desde + 999);
-        if (error) { delete cargas[c]; throw fallo(error); }
-        for (const r of data) mapa(c).set(r.id, r.data);
-        if (data.length < 1000) break;
-      }
-    })());
+  async function sincronizar(){
+    const res = await api('/api/docs' + (cursor ? '?since=' + encodeURIComponent(cursor) : ''));
+    const tocadas = new Set();
+    for (const d of res.docs) {
+      if (pendientes.get(d.coleccion + '/' + d.id)) continue;   // hay un cambio propio en camino
+      const antes = mapa(d.coleccion).get(d.id);
+      if (d.borrado) { if (antes !== undefined) { mapa(d.coleccion).delete(d.id); tocadas.add(d.coleccion); } }
+      else if (JSON.stringify(antes) !== JSON.stringify(d.data)) { mapa(d.coleccion).set(d.id, d.data); tocadas.add(d.coleccion); }
+    }
+    cursor = new Date(new Date(res.ahora).getTime() - 60000).toISOString();   // margen por relojes y escrituras simultáneas
+    tocadas.forEach(avisar);
   }
-  sb.channel('docs-cambios').on('postgres_changes', {event:'*', schema:'public', table:'docs'}, p => {
-    if (p.eventType === 'DELETE') { if (p.old?.coleccion) poner(p.old.coleccion, p.old.id, null); }
-    else if (p.new?.coleccion) poner(p.new.coleccion, p.new.id, p.new.data);
-  }).subscribe();
+  const listo = sincronizar();
+  const refrescar = () => { if (!document.hidden) sincronizar().catch(() => {}); };
+  setInterval(refrescar, 15000);
+  document.addEventListener('visibilitychange', refrescar);
+  window.addEventListener('online', refrescar);
+  async function escribir(c, id, op, data, prev, local){
+    const k = c + '/' + id;
+    pendientes.set(k, (pendientes.get(k) || 0) + 1);
+    poner(c, id, local);
+    try { await api('/api/docs', {method:'POST', body: JSON.stringify({op, coleccion:c, id, data})}); }
+    catch (e) { poner(c, id, prev); throw e; }
+    finally { const n = pendientes.get(k) - 1; if (n > 0) pendientes.set(k, n); else pendientes.delete(k); }
+  }
   const snapDoc = (id, data) => ({id, exists: data != null, data: () => data == null ? undefined : data, metadata:{fromCache:false, hasPendingWrites:false}});
   const cmp = (a, b) => a < b ? -1 : a > b ? 1 : 0;
   const OPS = {'==':(a,b) => a === b, '!=':(a,b) => a !== b, '<':(a,b) => a < b, '<=':(a,b) => a <= b, '>':(a,b) => a > b, '>=':(a,b) => a >= b};
   function docRef(c, id){
     return {
       id, path: c + '/' + id,
-      get: async () => { await cargar(c); return snapDoc(id, mapa(c).get(id)); },
-      onSnapshot(next, err){ const s = {col:c, fn:() => next(snapDoc(id, mapa(c).get(id)))}; subs.add(s); cargar(c).then(s.fn, e => err && err(e)); return () => subs.delete(s); },
-      async set(data){
-        const prev = mapa(c).get(id); poner(c, id, data);
-        const {error} = await sb.from('docs').upsert({coleccion:c, id, data});
-        if (error) { poner(c, id, prev); throw fallo(error); }
-      },
-      async update(cambios){
-        const prev = mapa(c).get(id); if (prev !== undefined) poner(c, id, {...prev, ...cambios});
-        const {error} = await sb.rpc('fusionar_doc', {p_coleccion:c, p_id:id, p_cambios:cambios});
-        if (error) { if (prev !== undefined) poner(c, id, prev); throw fallo(error); }
-      },
-      async delete(){
-        const prev = mapa(c).get(id); poner(c, id, null);
-        const {error} = await sb.from('docs').delete().match({coleccion:c, id});
-        if (error) { poner(c, id, prev); throw fallo(error); }
-      }
+      get: async () => { await listo; return snapDoc(id, mapa(c).get(id)); },
+      onSnapshot(next, err){ const s = {col:c, fn:() => next(snapDoc(id, mapa(c).get(id)))}; subs.add(s); listo.then(s.fn, e => err && err(e)); return () => subs.delete(s); },
+      set(data){ const prev = mapa(c).get(id); return escribir(c, id, 'set', data, prev, data); },
+      update(cambios){ const prev = mapa(c).get(id); return escribir(c, id, 'update', cambios, prev, prev === undefined ? undefined : {...prev, ...cambios}); },
+      delete(){ const prev = mapa(c).get(id); return escribir(c, id, 'delete', null, prev, null); }
     };
   }
   function query(c, q = {w:[], o:null, l:0}){
@@ -1659,90 +1664,51 @@ function crearDB(sb){
       where: (f, op, v) => query(c, {...q, w:[...q.w, [f, op, v]]}),
       orderBy: (f, dir = 'asc') => query(c, {...q, o:[f, dir]}),
       limit: n => query(c, {...q, l:n}),
-      get: async () => { await cargar(c); return run(); },
-      onSnapshot(next, err){ const s = {col:c, fn:() => next(run())}; subs.add(s); cargar(c).then(s.fn, e => err && err(e)); return () => subs.delete(s); },
+      get: async () => { await listo; return run(); },
+      onSnapshot(next, err){ const s = {col:c, fn:() => next(run())}; subs.add(s); listo.then(s.fn, e => err && err(e)); return () => subs.delete(s); },
       doc: id => docRef(c, id || nuevoId()),
       add: async data => { const r = docRef(c, nuevoId()); await r.set(data); return r; }
     };
   }
-  return {collection: c => query(c), doc: path => { const [c, id] = path.split('/'); return docRef(c, id); }};
+  return {collection: c => query(c), doc: path => { const [c, id] = path.split('/'); return docRef(c, id); }, listo};
 }
 
-/* ---------- Pantallas de acceso ---------- */
+/* ---------- Pantalla de acceso ---------- */
 function vAcceso(){
-  if (S.pantalla === 'config') return `<div class="login"><section class="card"><h2>Falta conectar la base de datos</h2><p class="muted">Edita el archivo <b>config.js</b> con la dirección y la clave pública de tu proyecto de Supabase. Los pasos están en el README.</p></section></div>`;
   if (S.pantalla === 'cargando') return `<div class="skel"></div><div class="skel"></div>`;
-  if (S.pantalla === 'noautorizado') return `<div class="login"><section class="card">
-      <h2>Tu correo aún no tiene acceso</h2>
-      <p class="muted">Entraste como <b>${esc(S.email)}</b>. Pide a alguien de la casa que agregue tu correo en <b>Gastos → Ajustes → Correos con acceso</b> y vuelve a abrir la app.</p>
-      <div class="btns"><button class="btn" data-a="recargar">Ya me agregaron</button><button class="btn ghost" data-a="salir">Usar otro correo</button></div>
-    </section></div>`;
   return `<div class="login"><section class="card">
       <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true" style="width:40px;height:40px"><rect x="7" y="10" width="18" height="19" rx="5" fill="var(--accent)"/><rect x="9" y="4" width="14" height="6" rx="2" fill="var(--sun)"/><path d="M11 18h10M11 22h7" stroke="var(--accent-ink)" stroke-width="2" stroke-linecap="round"/></svg></div>
       <h1>Despensa de la Casa</h1>
       <p class="muted">Inventario, alertas de vencimiento, lista del mercado y presupuesto de la familia.</p>
-      ${S.loginEnviado ? `
-        <div class="banner"><p>Te enviamos un correo a <b>${esc(S.loginEnviado)}</b>. Abre el enlace desde este mismo dispositivo, o escribe aquí el código de 6 dígitos.</p></div>
-        <label class="fld"><span>Código</span><input id="loginCodigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></label>
-        <div class="btns"><button class="btn" data-a="verificar">Entrar</button><button class="btn ghost" data-a="otroCorreo">Usar otro correo</button></div>`
-      : `
-        <label class="fld"><span>Tu correo</span><input id="loginEmail" type="email" autocomplete="email" placeholder="nombre@correo.com"></label>
-        <div class="btns"><button class="btn" data-a="login">Enviarme el acceso</button></div>
-        <small class="hint">No necesitas contraseña: te llega un enlace o un código al correo. Solo entran los correos autorizados por la familia.</small>`}
+      <label class="fld"><span>Clave de la casa</span><input id="loginClave" type="password" autocomplete="current-password" placeholder="La clave que comparte la familia"></label>
+      ${S.loginError ? `<div class="banner warn"><p>${esc(S.loginError)}</p></div>` : ''}
+      <div class="btns"><button class="btn" data-a="login" id="loginBtn">Entrar</button></div>
+      <small class="hint">La sesión queda abierta en este dispositivo por 6 meses.</small>
     </section></div>`;
 }
 const ACCESO = {
   login: async () => {
-    const email = ($('#loginEmail')?.value || '').trim().toLowerCase();
-    if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Escribe un correo válido.'); return; }
-    const {error} = await sb.auth.signInWithOtp({email, options:{emailRedirectTo: location.origin + location.pathname}});
-    if (error) { toast(/rate|seconds/i.test(error.message) ? 'Espera un minuto antes de pedir otro correo.' : 'No se pudo enviar el correo. Intenta de nuevo.'); return; }
-    S.loginEnviado = email; render();
+    const clave = $('#loginClave')?.value || '';
+    if (!clave) { toast('Escribe la clave de la casa.'); return; }
+    const b = $('#loginBtn'); if (b) { b.disabled = true; b.textContent = 'Entrando…'; }
+    try { await api('/api/login', {method:'POST', body: JSON.stringify({clave})}); S.loginError = ''; arrancar(); }
+    catch (e) { S.loginError = e.code === 'sesion' ? 'Clave incorrecta. Pregúntala a alguien de la casa.' : (e.message || 'No se pudo entrar. Revisa tu conexión.'); render(); }
   },
-  verificar: async () => {
-    const token = ($('#loginCodigo')?.value || '').trim();
-    if (!/^\d{6}$/.test(token)) { toast('Escribe el código de 6 dígitos.'); return; }
-    const {error} = await sb.auth.verifyOtp({email: S.loginEnviado, token, type:'email'});
-    if (error) toast('El código no es válido o ya venció. Pide otro.');
-  },
-  otroCorreo: () => { S.loginEnviado = ''; render(); },
-  salir: async () => { await sb.auth.signOut(); location.reload(); },
-  recargar: () => location.reload(),
-  agregarMiembro: async () => {
-    const email = ($('#aMiembro')?.value || '').trim().toLowerCase();
-    if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Escribe un correo válido.'); return; }
-    const {error} = await sb.from('miembros').upsert({email, agregado_por: S.email});
-    if (error) { toast('No se pudo agregar el correo.'); return; }
-    S.miembros = [...new Set([...S.miembros, email])]; render();
-    toast(`Listo. Envíale el enlace de la app a ${email}.`);
-  },
-  quitarMiembro: async d => {
-    if (d.e === S.email) { toast('No puedes quitar tu propio correo.'); return; }
-    const {error} = await sb.from('miembros').delete().eq('email', d.e);
-    if (error) { toast('No se pudo quitar el correo.'); return; }
-    S.miembros = S.miembros.filter(m => m !== d.e); render();
-  }
+  salir: async () => { await api('/api/logout', {method:'POST'}).catch(() => {}); location.reload(); }
 };
 Object.assign(ACT, ACCESO);
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Enter') return;
-  if (e.target.id === 'loginEmail') { e.preventDefault(); ACCESO.login(); }
-  if (e.target.id === 'loginCodigo') { e.preventDefault(); ACCESO.verificar(); }
-  if (e.target.id === 'aMiembro') { e.preventDefault(); ACCESO.agregarMiembro(); }
-});
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'loginClave') { e.preventDefault(); ACCESO.login(); } });
 
 /* ---------- Arranque ---------- */
 S.pantalla = 'cargando';
 render();
-async function arrancar(session){
-  if (S.db) return;
-  S.email = (session.user.email || '').toLowerCase();
-  const {data, error} = await sb.from('miembros').select('email');
-  if (error || !data || !data.length) { S.pantalla = 'noautorizado'; render(); return; }
-  S.miembros = data.map(r => r.email);
-  S.pantalla = 'app';
-  const db = crearDB(sb);
+async function arrancar(){
+  if (S.db) { S.pantalla = 'app'; render(); return; }
+  const db = crearDB();
+  try { await db.listo; }
+  catch (e) { if (e.code === 'sesion') { S.pantalla = 'login'; } else { S.pantalla = 'login'; S.loginError = e.message || 'No se pudo conectar con la base de datos.'; } render(); return; }
   S.db = db;
+  S.pantalla = 'app';
   const sub = (key, q) => q.onSnapshot(snap => {
     S[key] = snap.docs.map(d => ({id: d.id, ...d.data()}));
     S.loaded[key] = true; pedirRender();
@@ -1768,14 +1734,7 @@ async function arrancar(session){
     } catch {}
   }, 8000);
 }
-(async () => {
-  const cfg = window.CONFIG || {};
-  if (!window.supabase || !cfg.supabaseUrl || !cfg.supabaseAnonKey || /TU_/.test(cfg.supabaseUrl + cfg.supabaseAnonKey)) { S.pantalla = 'config'; render(); return; }
-  sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
-  sb.auth.onAuthStateChange((ev, session) => { if (session && !S.db) arrancar(session); });
-  const {data:{session}} = await sb.auth.getSession();
-  if (session) arrancar(session); else { S.pantalla = 'login'; render(); }
-})();
+arrancar();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 </script>
 </body>

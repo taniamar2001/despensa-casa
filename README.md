@@ -9,62 +9,40 @@ Inventario de alimentos, aseo y mantenimiento del hogar para la familia:
 - Recetas de la casa: muestra si hay todo o qué falta
 - Presupuesto mensual por quincenas, gasto por tipo y por tienda, comida perdida
 
-Es una página web estática (`index.html`) que se publica en **Vercel**. Los datos y el acceso viven en **Supabase**.
+## Cómo está hecha
 
-## Archivos
-
-| Archivo | Para qué |
+| Pieza | Qué hace |
 |---|---|
-| `index.html` | Toda la app |
-| `config.js` | Dirección y clave pública de Supabase |
-| `supabase/schema.sql` | Tablas, reglas de acceso y ajustes iniciales |
-| `manifest.webmanifest`, `icon.svg`, `sw.js` | Para instalarla en el celular como una app |
+| `index.html` | Toda la app (pantallas y lógica). Se instala en el celular como app. |
+| `api/` | Funciones de Vercel: la clave de la casa (`login`, `logout`) y los datos (`docs`). |
+| Neon (Postgres) | Guarda los datos en una tabla `docs`, que se crea sola la primera vez. |
 
-## Puesta en marcha (una sola vez)
+Cada celular revisa si hay cambios cada 15 segundos y también al volver a abrir la app.
 
-### 1. Supabase (base de datos y acceso)
+## Variables de entorno (en Vercel, nunca en el código)
 
-1. Crea una cuenta en <https://supabase.com> y un proyecto nuevo (plan gratuito, región `South America (São Paulo)`).
-2. Ve a **SQL Editor → New query**, pega el contenido de `supabase/schema.sql`, cambia `TU_CORREO@gmail.com` por tu correo y presiona **Run**.
-3. Ve a **Project Settings → API** y copia:
-   - **Project URL** → `supabaseUrl` en `config.js`
-   - **anon public** → `supabaseAnonKey` en `config.js`
-4. Ve a **Authentication → Emails → Magic Link** y agrega el código al mensaje, para poder entrar escribiéndolo en el celular:
-   ```html
-   <p>Tu código para entrar: <strong>{{ .Token }}</strong></p>
-   ```
+| Variable | Valor |
+|---|---|
+| `DATABASE_URL` | La conexión de Neon (`postgresql://…`) |
+| `CLAVE_CASA` | La clave que usará la familia para entrar |
+| `SESSION_SECRET` | Un texto largo y aleatorio para firmar las sesiones |
 
-### 2. GitHub (guardar el código)
+## Puesta en marcha
 
-1. Crea una cuenta en <https://github.com> y un repositorio nuevo **privado** llamado `despensa-casa` (sin README).
-2. Desde esta carpeta:
-   ```bash
-   git remote add origin https://github.com/TU_USUARIO/despensa-casa.git
-   git push -u origin main
-   ```
+1. **GitHub:** crea un repositorio privado `despensa-casa` y sube esta carpeta (`git push`).
+2. **Vercel:** *Add New → Project →* importa el repositorio. Framework: **Other**.
+   Antes de *Deploy*, abre **Environment Variables** y agrega las tres variables de arriba.
+3. Abre la dirección que entrega Vercel, escribe la clave de la casa y listo.
+4. Comparte la dirección y la clave con la familia. En el celular: menú del navegador → **Agregar a la pantalla de inicio**.
 
-### 3. Vercel (publicar la app)
+Cada `git push` a `main` publica una versión nueva automáticamente.
 
-1. Crea una cuenta en <https://vercel.com> entrando con GitHub.
-2. **Add New → Project → Import** el repositorio `despensa-casa`.
-3. Framework: **Other**. No hace falta comando de build. Presiona **Deploy**.
-4. Copia la dirección que te da Vercel (por ejemplo `https://despensa-casa.vercel.app`).
-5. En Supabase, **Authentication → URL Configuration**:
-   - **Site URL**: la dirección de Vercel
-   - **Redirect URLs**: la dirección de Vercel
+## Mantenimiento
 
-### 4. Entrar e invitar a la familia
+- **Cambiar la clave:** Vercel → Settings → Environment Variables → `CLAVE_CASA` → Redeploy.
+- **Cerrar la sesión de todos los dispositivos:** cambia `SESSION_SECRET` y haz Redeploy.
+- **Contraseña de la base de datos:** si se expone, cámbiala en Neon (Roles → Reset password) y actualiza `DATABASE_URL` en Vercel.
 
-1. Abre la dirección de Vercel, escribe tu correo y entra con el enlace o el código.
-2. En **Gastos → Ajustes → Correos con acceso**, agrega el correo de cada persona.
-3. Envíales la dirección. En el celular: menú del navegador → **Agregar a la pantalla de inicio**.
+## Pendiente para más adelante
 
-## Cambios futuros
-
-Cada `git push` a `main` publica la nueva versión en Vercel automáticamente.
-
-## Notas
-
-- El plan gratuito de Supabase envía pocos correos de acceso por hora. Como la sesión queda abierta en cada celular, solo se necesita al entrar la primera vez.
-- Un proyecto gratuito de Supabase se pausa tras 7 días sin uso; se reactiva desde su panel.
-- Las funciones con IA (leer facturas, fotos de la nevera, sugerir recetas) están desactivadas en esta versión. Se pueden agregar después con una función de Vercel y una clave de la API de Anthropic.
+Funciones con IA (leer facturas, fotos de la nevera, sugerir recetas): se pueden agregar con una función de Vercel y una clave de la API de Anthropic.

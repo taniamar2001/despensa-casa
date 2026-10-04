@@ -1,0 +1,10 @@
+{
+  "name": "despensa-casa",
+  "private": true,
+  "type": "module",
+  "description": "Inventario, alertas de vencimiento, lista de mercado y presupuesto de la familia.",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0"
+  }
+}
