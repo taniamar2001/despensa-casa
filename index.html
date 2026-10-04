@@ -1,0 +1,1782 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Despensa de la Casa</title>
+<meta name="description" content="Inventario de alimentos, aseo y hogar con alertas de vencimiento, lista de mercado y control del presupuesto familiar.">
+<meta name="theme-color" content="#2b6c4a">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: app de una columna (máx. 980px) con cabecera fija, pestañas arriba en escritorio y abajo en el celular; tarjetas solo donde separan tareas */
+:root{
+  --bg:#f2f5f0; --surface:#ffffff; --surface-2:#e8eee5; --ink:#17221c; --muted:#5b6a62; --line:#d6ded2;
+  --accent:#2b6c4a; --accent-ink:#ffffff; --accent-soft:#dbeae0;
+  --sun:#d9921c; --sun-soft:#fcefd2;
+  --hay:#2d8a56; --hay-soft:#ddf0e4; --poco:#c27c08; --poco-soft:#fbeecf; --nohay:#c2432d; --nohay-soft:#f8ded8;
+  --s-ali:#2d8a56; --s-ase:#2b7bad; --s-hog:#8a5ca8;
+  --shadow:0 1px 2px rgb(23 50 35 / .06), 0 6px 20px rgb(23 50 35 / .07);
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --r:16px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1411; --surface:#171f1a; --surface-2:#202a24; --ink:#e5ece7; --muted:#9aa89f; --line:#2b362f;
+  --accent:#6cc497; --accent-ink:#0b1a12; --accent-soft:#1c3a29;
+  --sun:#f0b23e; --sun-soft:#382c13;
+  --hay:#5cc28a; --hay-soft:#163324; --poco:#e8a83a; --poco-soft:#382b11; --nohay:#ef7c66; --nohay-soft:#3c1d17;
+  --s-ali:#5cc28a; --s-ase:#5eaee0; --s-hog:#bb96d4;
+  --shadow:0 1px 2px rgb(0 0 0 / .3); color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1411; --surface:#171f1a; --surface-2:#202a24; --ink:#e5ece7; --muted:#9aa89f; --line:#2b362f;
+  --accent:#6cc497; --accent-ink:#0b1a12; --accent-soft:#1c3a29;
+  --sun:#f0b23e; --sun-soft:#382c13;
+  --hay:#5cc28a; --hay-soft:#163324; --poco:#e8a83a; --poco-soft:#382b11; --nohay:#ef7c66; --nohay-soft:#3c1d17;
+  --s-ali:#5cc28a; --s-ase:#5eaee0; --s-hog:#bb96d4;
+  --shadow:0 1px 2px rgb(0 0 0 / .3); color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{color-scheme:light}
+body{margin:0;padding-top:env(safe-area-inset-top,0px)}
+img{max-width:100%}
+.login{max-width:440px;margin:6vh auto 0}
+.login .card{gap:16px}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(26px,5vw,34px);font-weight:800}
+h2{font-size:20px;font-weight:700}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+small,.small{font-size:13px}
+
+/* Shell */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top-in{max-width:980px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:800;font-size:18px}
+.brand svg{width:30px;height:30px}
+.top .sp{flex:1}
+.who{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px 5px 6px;font-weight:600;font-size:14px}
+.who .av{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:12px;font-weight:700}
+.help{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-weight:700}
+.tabs{max-width:980px;margin:0 auto;padding:0 16px;display:flex;gap:4px}
+.tab{position:relative;display:flex;align-items:center;gap:8px;padding:10px 14px;border:0;background:none;color:var(--muted);font-weight:600;border-bottom:2.5px solid transparent}
+.tab svg{width:20px;height:20px}
+.tab[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
+.badge{min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:var(--nohay);color:#fff;font-size:11px;font-weight:700;display:inline-grid;place-items:center}
+.badge.n{background:var(--accent);color:var(--accent-ink)}
+main{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:20px 40px;display:flex;flex-direction:column;gap:20px}
+@media (max-width:760px){
+  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:none;background:var(--surface);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px));justify-content:space-around;gap:0}
+  .tab{flex-direction:column;gap:2px;padding:6px 4px;font-size:11.5px;border-bottom:0;flex:1}
+  .tab[aria-current="page"]{color:var(--accent)}
+  .tab .badge{position:absolute;top:2px;left:calc(50% + 6px)}
+  main{padding-bottom:110px}
+  .who .nm{display:none}
+  .who{padding:5px}
+}
+
+/* Bloques */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px;min-width:0}
+.card-h{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.card-h > div{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
+.intro{display:flex;flex-direction:column;gap:6px}
+.intro p{color:var(--muted);max-width:62ch}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px}
+.sec-t{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:22px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;color:var(--muted)}
+.empty b{color:var(--ink);font-family:var(--f-display);font-size:18px}
+.tip{display:flex;gap:10px;align-items:flex-start;background:var(--sun-soft);border-radius:12px;padding:12px 14px;font-size:14px}
+.tip svg{width:20px;height:20px;flex:none;color:var(--sun);margin-top:1px}
+.banner{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-size:14px}
+.banner p{flex:1;min-width:200px}
+.banner.warn{background:var(--nohay-soft)}
+
+/* Botones */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:10px 16px;background:var(--accent);color:var(--accent-ink);font-weight:700;white-space:nowrap}
+.btn svg{width:18px;height:18px}
+.btn:hover{filter:brightness(1.06)}
+.btn.ghost{background:var(--surface-2);color:var(--ink)}
+.btn.line{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.btn.danger{color:var(--nohay)}
+.btn.sm{padding:6px 12px;font-size:13.5px;border-radius:10px}
+.btn[disabled]{opacity:.55;cursor:default}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13.5px;font-weight:600;color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chip .c{color:var(--muted);font-weight:500;margin-left:3px}
+.chip[aria-pressed="true"] .c{color:inherit;opacity:.7}
+.x{border:0;background:none;color:var(--muted);font-size:22px;line-height:1;width:34px;height:34px;border-radius:10px;flex:none}
+.x:hover{background:var(--surface-2)}
+.x.sm{font-size:18px;width:28px;height:28px}
+
+/* Pills de estado */
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.pill.hay{background:var(--hay-soft);color:var(--hay)}
+.pill.poco{background:var(--poco-soft);color:var(--poco)}
+.pill.nohay{background:var(--nohay-soft);color:var(--nohay)}
+.pill.neutral{background:var(--surface-2);color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+
+/* Semáforo */
+.sema{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:620px){.sema{grid-template-columns:1fr}}
+.sem{border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);background:var(--surface);text-align:left;box-shadow:var(--shadow)}
+.sem .big{font-family:var(--f-display);font-size:34px;font-weight:800;line-height:1}
+.sem .lbl{font-weight:700}
+.sem small{color:var(--muted)}
+.sem.r .big{color:var(--nohay)} .sem.a .big{color:var(--poco)} .sem.v .big{color:var(--accent)}
+.sem.v .big{font-size:26px}
+
+/* Lista de productos */
+.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.item{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.item-name{flex:1;min-width:0;border:0;background:none;text-align:left;padding:0;display:flex;flex-direction:column;gap:2px}
+.item-name b{font-weight:600;overflow-wrap:anywhere}
+.item-name small{color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.item.est-nohay .item-name b{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 50%,transparent)}
+.estados{display:flex;background:var(--surface-2);border-radius:11px;padding:3px;gap:2px;flex:none}
+.estados button{border:0;background:none;border-radius:8px;padding:5px 9px;font-size:12.5px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:5px}
+.estados button i{width:9px;height:9px;border-radius:50%;border:2px solid currentColor;display:block}
+.estados .e-hay[aria-pressed="true"]{background:var(--hay);color:#fff}
+.estados .e-poco[aria-pressed="true"]{background:var(--poco);color:#fff}
+.estados .e-nohay[aria-pressed="true"]{background:var(--nohay);color:#fff}
+.estados .e-hay i{background:currentColor}
+.estados .e-poco i{background:linear-gradient(90deg,currentColor 50%,transparent 50%)}
+.estados.big{width:100%}
+.estados.big button{flex:1;justify-content:center;padding:10px;font-size:14px}
+@media (max-width:480px){.estados button span{display:none}.estados button{padding:8px 10px}.estados.big button span{display:inline}}
+.group-h{display:flex;align-items:center;gap:8px;padding-top:6px}
+.group-h h3{font-size:15px}
+.group-h .c{color:var(--muted);font-size:13px}
+
+/* Alertas */
+.alert{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--surface-2);flex-wrap:wrap}
+.alert.r{background:var(--nohay-soft)} .alert.a{background:var(--poco-soft)}
+.alert .t{flex:1;min-width:150px;display:flex;flex-direction:column}
+.alert .t b{font-weight:700}
+.alert .t small{color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:8px}
+
+/* Guía */
+.guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px;counter-reset:paso}
+.step{background:var(--surface-2);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.step .n{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-family:var(--f-display)}
+.step p{font-size:14px;color:var(--muted)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13.5px}
+
+/* Mercado */
+.progress{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.progress > span{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.litem{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.litem:first-child{border-top:0}
+.check{flex:1;min-width:0;display:flex;align-items:center;gap:12px;cursor:pointer}
+.check input{position:absolute;opacity:0;pointer-events:none}
+.box{width:24px;height:24px;border-radius:8px;border:2px solid var(--line);flex:none;display:grid;place-items:center;background:var(--surface)}
+.check input:checked + .box{background:var(--accent);border-color:var(--accent)}
+.check input:checked + .box::after{content:"";width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.check input:focus-visible + .box{outline:2.5px solid var(--accent);outline-offset:2px}
+.litem.done .lname{text-decoration:line-through;color:var(--muted)}
+.lname{overflow-wrap:anywhere;font-weight:600}
+.addrow{display:flex;gap:8px;flex-wrap:wrap}
+.addrow input{flex:1;min-width:160px}
+.compra{border-top:1px solid var(--line);padding:10px 0}
+.compra:first-child{border-top:0}
+.compra summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;flex-wrap:wrap}
+.compra summary::-webkit-details-marker{display:none}
+.compra summary .t{flex:1;min-width:160px;display:flex;flex-direction:column}
+.compra summary .v{font-weight:700;font-family:var(--f-display);font-size:17px}
+.compra .det{padding:10px 0 4px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.kv{display:flex;justify-content:space-between;gap:12px}
+
+/* Campos */
+input[type=text],input[type=date],input[type=search],input:not([type]),select,textarea{width:100%;border:1.5px solid var(--line);background:var(--surface);border-radius:11px;padding:9px 12px;min-width:0}
+textarea{resize:vertical;min-height:80px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none}
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fld > span{font-weight:700;font-size:14px}
+.fld em{font-style:normal;color:var(--muted);font-weight:500}
+.hint{color:var(--muted)}
+.row2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1;min-width:110px;border:1.5px solid var(--line);background:var(--surface);border-radius:11px;padding:9px 10px;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:7px}
+.seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.toolbar input[type=search]{flex:1;min-width:180px}
+
+/* Gastos */
+.meter{position:relative;height:16px;border-radius:99px;background:var(--surface-2);overflow:visible}
+.meter .fill{position:absolute;inset:0 auto 0 0;border-radius:99px;background:var(--accent)}
+.meter .fill.over{background:var(--nohay)}
+.meter .mid{position:absolute;top:-4px;bottom:-4px;left:50%;width:2px;background:var(--muted);opacity:.5}
+.meter .pace{position:absolute;top:-7px;width:0;height:30px;border-left:2px dashed var(--ink)}
+.meter-l{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}
+.bigmoney{font-family:var(--f-display);font-size:clamp(30px,6vw,42px);font-weight:800;line-height:1}
+.hbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center}
+.hbar .bar{grid-column:1 / -1;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.hbar .bar span{display:block;height:100%;border-radius:99px}
+.chart{width:100%;overflow-x:auto}
+.chart svg{display:block;width:100%;min-width:420px;height:auto}
+.q{background:var(--surface-2);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+
+/* Recetas */
+.receta{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.receta .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:13px}
+.ing{display:flex;flex-wrap:wrap;gap:6px}
+.ing span{font-size:13px;padding:3px 9px;border-radius:999px;background:var(--hay-soft);color:var(--hay);font-weight:600}
+.ing span.no{background:var(--nohay-soft);color:var(--nohay)}
+.receta ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.receta details summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--accent)}
+.ia-card{background:linear-gradient(135deg,var(--accent-soft),var(--surface) 70%)}
+.spinner{width:22px;height:22px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:spin 1s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading{display:flex;gap:12px;align-items:center;padding:12px;border-radius:12px;background:var(--surface-2)}
+.feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.feed li{display:flex;gap:10px;align-items:baseline}
+.feed time{color:var(--muted);font-size:12.5px;white-space:nowrap;margin-left:auto}
+
+/* Modal */
+.modal{position:fixed;inset:0;z-index:50;background:rgb(10 20 14 / .45);display:flex;align-items:flex-end;justify-content:center;padding:16px}
+@media (min-width:700px){.modal{align-items:center}}
+.sheet{background:var(--surface);color:var(--ink);border-radius:20px;width:min(640px,100%);max-height:calc(100% - 8px);display:flex;flex-direction:column;box-shadow:0 20px 60px rgb(0 0 0 / .3);overflow:hidden}
+.sheet-h{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.sheet-h h2{flex:1}
+.sheet-b{padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+.sheet-f{display:flex;gap:8px;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);flex-wrap:wrap;align-items:center}
+.sheet-f .sp{flex:1}
+.drop{border:2px dashed var(--line);border-radius:16px;padding:26px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;cursor:pointer;background:var(--surface-2)}
+.drop svg{width:40px;height:40px;color:var(--accent)}
+.drop b{font-family:var(--f-display);font-size:18px}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+.drop:focus-within{outline:2.5px solid var(--accent)}
+.rev{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.rev li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:center;padding:10px;border-radius:12px;background:var(--surface-2)}
+.rev li.off{opacity:.55}
+.rev .fields{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.3fr) minmax(90px,1fr);gap:6px}
+@media (max-width:520px){.rev .fields{grid-template-columns:1fr 1fr}.rev .fields > :first-child{grid-column:1 / -1}}
+.rev small{grid-column:2;color:var(--muted)}
+.rev input[type=checkbox],.chk input{width:20px;height:20px;accent-color:var(--accent)}
+.chk{display:flex;gap:10px;align-items:center;padding:10px;border-radius:12px;background:var(--surface-2);cursor:pointer}
+.chk span{flex:1;min-width:0}
+.todo{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.todo li{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.todo li:first-child{border-top:0}
+.todo li > div{flex:1;min-width:180px;display:flex;flex-direction:column}
+.todo li small{color:var(--muted)}
+.todo .tick{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:14px;flex:none}
+.todo li.ok .tick{background:var(--hay);border-color:var(--hay);color:#fff}
+.todo li.ok b{text-decoration:line-through;color:var(--muted)}
+.metodos{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:10px}
+.metodo{border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:14px;text-align:left;display:flex;flex-direction:column;gap:6px}
+.metodo:hover{border-color:var(--accent)}
+.metodo svg{width:28px;height:28px;color:var(--accent)}
+.metodo b{font-family:var(--f-display);font-size:16px}
+.metodo small{color:var(--muted)}
+.rev .fields.f4{grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr))}
+@media (max-width:520px){.rev .fields.f4{grid-template-columns:1fr 1fr 1fr}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+@media (min-width:761px){.toast{bottom:24px}}
+.skel{height:90px;border-radius:var(--r);background:var(--surface-2);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.5}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="7" y="10" width="18" height="19" rx="5" fill="var(--accent)"/><rect x="9" y="4" width="14" height="6" rx="2" fill="var(--sun)"/><path d="M11 18h10M11 22h7" stroke="var(--accent-ink)" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Despensa de la Casa</span>
+    </div>
+    <span class="sp"></span>
+    <button class="help" data-a="guia" aria-label="Cómo funciona" title="Cómo funciona">?</button>
+    <button class="who" id="who" data-a="quien"><span class="av">?</span><span class="nm">¿Quién eres?</span></button>
+  </div>
+  <nav class="tabs" id="tabs" aria-label="Secciones"></nav>
+</header>
+<main id="main"><div class="skel"></div><div class="skel"></div></main>
+<div id="modal" class="modal" hidden></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/config.js"></script>
+<script>
+/* ---------- Catálogos ---------- */
+const SECC = {
+  alimentos:{n:'Alimentos', c:'var(--s-ali)'},
+  aseo:{n:'Aseo y limpieza', c:'var(--s-ase)'},
+  hogar:{n:'Mantenimiento y dotación', c:'var(--s-hog)'}
+};
+const CATS = {
+  alimentos:['Frutas y verduras','Carnes, pollo y pescado','Lácteos y huevos','Granos, arroz y pastas','Harinas y panadería','Enlatados y conservas','Salsas, aceites y condimentos','Bebidas y café','Snacks y dulces','Congelados','Otros alimentos'],
+  aseo:['Aseo personal','Limpieza de la casa','Lavandería','Papel y desechables','Otros de aseo'],
+  hogar:['Bombillos y eléctricos','Pilas y baterías','Ferretería y arreglos','Cocina y menaje','Toallas, sábanas y textiles','Otros del hogar']
+};
+const LUGARES = ['Nevera','Congelador','Alacena','Frutero','Baño','Lavadero','Bodega','Otro'];
+/* Días aproximados que dura un perecedero desde la compra */
+const VIDA = {'Frutas y verduras':7,'Carnes, pollo y pescado':3,'Lácteos y huevos':10,'Harinas y panadería':5,'Congelados':60};
+const EST = {hay:{n:'Hay',c:'hay'}, poco:{n:'Queda poco',c:'poco'}, nohay:{n:'Se acabó',c:'nohay'}};
+/* Catálogo de la canasta familiar colombiana para la carga inicial: [lugar, sección, categoría, productos] */
+const CATALOGO = [
+  ['Nevera','alimentos','Lácteos y huevos','Leche entera|Huevos|Queso campesino|Queso tajado|Mantequilla|Yogur|Kumis|Crema de leche'],
+  ['Nevera','alimentos','Carnes, pollo y pescado','Pechuga de pollo|Pollo en presas|Carne de res|Carne molida|Carne de cerdo|Pescado|Jamón|Salchichas|Chorizo'],
+  ['Nevera','alimentos','Frutas y verduras','Tomate|Cebolla cabezona|Cebolla larga|Zanahoria|Lechuga|Pimentón|Cilantro|Limón|Aguacate|Brócoli|Habichuela|Fresas|Mora'],
+  ['Nevera','alimentos','Harinas y panadería','Arepas'],
+  ['Nevera','alimentos','Salsas, aceites y condimentos','Salsa de tomate|Mayonesa|Mostaza'],
+  ['Congelador','alimentos','Congelados','Pollo congelado|Carne congelada|Pescado congelado|Arveja congelada|Papas a la francesa|Pulpa de fruta|Helado'],
+  ['Frutero','alimentos','Frutas y verduras','Banano|Plátano|Papa pastusa|Papa criolla|Yuca|Ajo|Mango|Naranja|Mandarina|Manzana|Papaya|Guayaba|Piña'],
+  ['Alacena','alimentos','Granos, arroz y pastas','Arroz|Lentejas|Fríjol|Garbanzo|Arveja seca|Pasta|Avena'],
+  ['Alacena','alimentos','Harinas y panadería','Harina de maíz|Harina de trigo|Pan tajado|Tostadas'],
+  ['Alacena','alimentos','Salsas, aceites y condimentos','Aceite|Sal|Azúcar|Panela|Vinagre|Comino|Color (achiote)|Pimienta|Caldo de gallina en cubos|Ajo en polvo'],
+  ['Alacena','alimentos','Enlatados y conservas','Atún|Sardinas|Maíz tierno|Mermelada|Leche condensada'],
+  ['Alacena','alimentos','Bebidas y café','Café|Chocolate de mesa|Aromáticas|Leche en polvo|Jugo en caja|Gaseosa|Agua en botella'],
+  ['Alacena','alimentos','Snacks y dulces','Galletas|Cereal|Gelatina|Paquetes de mecato|Bocadillo'],
+  ['Baño','aseo','Aseo personal','Jabón de baño|Champú|Acondicionador|Crema dental|Cepillos de dientes|Desodorante|Toallas higiénicas|Máquinas de afeitar|Crema corporal|Copitos'],
+  ['Baño','aseo','Papel y desechables','Papel higiénico'],
+  ['Lavadero','aseo','Lavandería','Detergente en polvo|Detergente líquido|Suavizante|Jabón en barra|Blanqueador'],
+  ['Lavadero','aseo','Limpieza de la casa','Lavaloza|Esponjas|Limpiador multiusos|Desinfectante de pisos|Ambientador|Insecticida|Guantes de aseo'],
+  ['Lavadero','aseo','Papel y desechables','Bolsas de basura|Toallas de cocina|Servilletas|Papel aluminio|Vinipel'],
+  ['Bodega','hogar','Bombillos y eléctricos','Bombillos LED|Cinta aislante|Extensión eléctrica'],
+  ['Bodega','hogar','Pilas y baterías','Pilas AA|Pilas AAA'],
+  ['Bodega','hogar','Ferretería y arreglos','Pegante|Tornillos y chazos|Velas|Fósforos|Filtro de agua|Pipeta de gas'],
+  ['Bodega','hogar','Cocina y menaje','Limpiones|Escoba|Trapeadora|Recogedor|Balde'],
+  ['Bodega','hogar','Toallas, sábanas y textiles','Toallas de baño|Sábanas']
+];
+const CAT_ITEMS = CATALOGO.flatMap(([lugar, seccion, categoria, ns]) => ns.split('|').map(nombre => ({nombre, lugar, seccion, categoria})));
+const LUGARES_CARGA = ['Nevera','Congelador','Frutero','Alacena','Baño','Lavadero','Bodega'];
+const MOTIVO = {nohay:'Se acabó', poco:'Queda poco', manual:'Agregado', nuevo:'Nuevo'};
+
+const ICON = {
+  inicio:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/>',
+  despensa:'<rect x="5" y="8" width="14" height="13" rx="3"/><path d="M7 3h10v5H7z"/><path d="M5 13h14"/>',
+  cocinar:'<path d="M4 10h16v4a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6z"/><path d="M2 10h20"/><path d="M9 6c0-1.2 1.2-1.2 1.2-2.4M14 6c0-1.2 1.2-1.2 1.2-2.4"/>',
+  mercado:'<path d="M3 4h2.2l2.4 11h10.8L21 7H6.3"/><circle cx="9.5" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>',
+  gastos:'<path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/>',
+  camara:'<path d="M3.5 8h3.5l2-3h6l2 3h3.5v11.5h-17z"/><circle cx="12" cy="13.2" r="3.6"/>',
+  factura:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+  ia:'<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>',
+  mas:'<path d="M12 5v14M5 12h14"/>',
+  bombillo:'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>'
+};
+const ico = (k, cls='') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
+
+/* ---------- Utilidades ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
+const hoy = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const parseIso = s => { const [y,m,d] = String(s).split('-').map(Number); return new Date(y, m-1, d); };
+const sumarDias = (s, n) => { const d = parseIso(s); d.setDate(d.getDate()+n); return iso(d); };
+const dias = s => s ? Math.round((parseIso(s) - hoy()) / 864e5) : null;
+const mesKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+const cop = n => new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(Math.round(n||0));
+const corto = n => n >= 1e6 ? (Math.round(n/1e5)/10).toString().replace('.',',') + ' M' : n >= 1e3 ? Math.round(n/1e3) + ' mil' : String(Math.round(n||0));
+const pesos = v => Number(String(v ?? '').replace(/[^\d]/g,'')) || 0;
+const fechaLarga = d => d.toLocaleDateString('es-CO',{weekday:'long', day:'numeric', month:'long'});
+const fechaCorta = s => parseIso(s).toLocaleDateString('es-CO',{day:'numeric', month:'short'}).replace('.','');
+const opts = (arr, sel) => arr.map(o => `<option${o===sel?' selected':''}>${esc(o)}</option>`).join('');
+const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k,v) => { try { localStorage.setItem(k,v); } catch {} };
+const hace = ts => { const m = Math.round((Date.now()-ts)/6e4); if (m < 1) return 'ahora'; if (m < 60) return `hace ${m} min`; const h = Math.round(m/60); if (h < 24) return `hace ${h} h`; const d = Math.round(h/24); return d === 1 ? 'ayer' : `hace ${d} días`; };
+const lugarSugerido = (secc, cat) => secc === 'alimentos' ? (cat === 'Congelados' ? 'Congelador' : ['Carnes, pollo y pescado','Lácteos y huevos','Frutas y verduras'].includes(cat) ? 'Nevera' : 'Alacena') : secc === 'aseo' ? (cat === 'Aseo personal' ? 'Baño' : 'Lavadero') : 'Bodega';
+
+/* ---------- Estado ---------- */
+const TABS = [['inicio','Inicio'],['despensa','Despensa'],['cocinar','Cocinar'],['mercado','Mercado'],['gastos','Gastos']];
+const S = {
+  productos:[], lista:[], compras:[], mermas:[], recetas:[], actividad:[],
+  config:{presupuesto:8000000, diasAlerta:3, familia:[]}, configExiste:false,
+  loaded:{}, db:null, offline:false, readonly:false, sample:null, imgs:null,
+  tab: TABS.some(t => t[0] === location.hash.slice(1)) ? location.hash.slice(1) : (lsGet('tab') || 'inicio'),
+  fSecc:'todas', fLugar:'todos', q:'',
+  ia:{estado:'idle', recetas:[], err:''},
+  quien: lsGet('quien') || '', guiaOculta: lsGet('guia-oculta') === '1'
+};
+let M = {};   // estado del modal abierto
+
+const byId = id => S.productos.find(p => p.id === id);
+const porNombre = n => S.productos.find(p => norm(p.nombre) === norm(n));
+const quien = () => S.quien || 'Alguien';
+
+function venceInfo(p){
+  if (!p.vence || p.estado === 'nohay') return null;
+  const d = dias(p.vence), a = S.config.diasAlerta || 3;
+  const aprox = p.venceAprox ? ' (aprox.)' : '';
+  let t;
+  if (d < 0) t = d === -1 ? 'Venció ayer' : `Venció hace ${-d} días`;
+  else if (d === 0) t = 'Vence hoy';
+  else if (d === 1) t = 'Vence mañana';
+  else if (d <= 30) t = `Vence en ${d} días`;
+  else t = `Vence ${fechaCorta(p.vence)}`;
+  return {d, t: t + aprox, c: d < 0 ? 'nohay' : d <= a ? 'poco' : 'neutral'};
+}
+function alertas(){
+  const a = S.config.diasAlerta || 3;
+  const con = S.productos.filter(p => p.vence && p.estado !== 'nohay').map(p => ({p, d: dias(p.vence)})).sort((x,y) => x.d - y.d);
+  return {
+    vencidos: con.filter(x => x.d < 0),
+    pronto: con.filter(x => x.d >= 0 && x.d <= a),
+    semana: con.filter(x => x.d >= 0 && x.d <= 7)
+  };
+}
+function listaItems(){
+  const deP = S.productos.filter(p => !p.noComprar && (p.estado !== 'hay' || p.enLista)).map(p => ({
+    key:'p:'+p.id, tipo:'p', id:p.id, nombre:p.nombre, seccion:p.seccion||'alimentos', carrito:!!p.carrito,
+    motivo: p.estado === 'nohay' ? 'nohay' : p.estado === 'poco' ? 'poco' : 'manual'
+  }));
+  const extras = S.lista.map(l => ({key:'l:'+l.id, tipo:'l', id:l.id, nombre:l.nombre, seccion:l.seccion||'alimentos', carrito:!!l.carrito, motivo:'nuevo'}));
+  return [...deP, ...extras];
+}
+function repartir(c){
+  const r = {alimentos:0, aseo:0, hogar:0, sin:0}; let asign = 0;
+  const total = +c.total || 0;
+  if (c.reparto) for (const k of ['alimentos','aseo','hogar']) { const v = +c.reparto[k] || 0; r[k] += v; asign += v; }
+  else if (Array.isArray(c.items)) for (const it of c.items) { const v = +it.valor || 0; if (r[it.seccion] !== undefined) { r[it.seccion] += v; asign += v; } }
+  if (asign > total && asign > 0) { const f = total / asign; for (const k of ['alimentos','aseo','hogar']) r[k] = Math.round(r[k]*f); }
+  else r.sin = total - asign;
+  return r;
+}
+function mesStats(key){
+  const cs = S.compras.filter(c => String(c.fecha||'').startsWith(key));
+  const st = {total:0, q1:0, q2:0, n:cs.length, secc:{alimentos:0,aseo:0,hogar:0,sin:0}, tiendas:{}, peq:{n:0,total:0}, perdido:0, nPerdido:0};
+  for (const c of cs) {
+    const t = +c.total || 0; st.total += t;
+    if (+String(c.fecha).slice(8,10) <= 15) st.q1 += t; else st.q2 += t;
+    const r = repartir(c); for (const k in r) st.secc[k] += r[k];
+    const tn = (c.tienda || 'Sin tienda').trim(); st.tiendas[tn] = (st.tiendas[tn]||0) + t;
+    if (c.tipo === 'pequena') { st.peq.n++; st.peq.total += t; }
+  }
+  for (const m of S.mermas.filter(m => String(m.fecha||'').startsWith(key))) { st.perdido += +m.valor || 0; st.nPerdido++; }
+  return st;
+}
+function proximoJueves(){
+  const d = hoy(); const diff = (4 - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + diff); return {d, diff};
+}
+
+/* ---------- Escrituras ---------- */
+const colec = n => S.db.collection(n);
+function errMsg(e){
+  if (e && e.code === 'invalid_argument') { S.readonly = S.readonly || null; return 'No tienes permiso para guardar. Pide que te compartan la app como editor.'; }
+  if (e && e.code === 'quota_exceeded') return 'Se llenó el espacio de la app. Borra compras o ejemplos antiguos.';
+  return 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.';
+}
+async function guardar(fn, ok){
+  if (!S.db) { toast('No hay conexión con los datos. Abre la app desde Claude con tu cuenta.'); return false; }
+  try { await fn(); if (ok) toast(ok); return true; }
+  catch (e) { toast(errMsg(e)); return false; }
+}
+const colas = {};
+function actualizar(path, data){
+  colas[path] = (colas[path] || Promise.resolve()).then(() => S.db.doc(path).update(data)).catch(e => toast(errMsg(e)));
+  return colas[path];
+}
+function registrar(txt){
+  if (!S.db) return;
+  colec('actividad').add({txt, por: quien(), ts: Date.now()}).catch(() => {});
+}
+
+/* ---------- Render ---------- */
+let rafPend = false;
+function pedirRender(){ if (rafPend) return; rafPend = true; requestAnimationFrame(() => { rafPend = false; render(); }); }
+function render(){
+  const a = document.activeElement, fid = a && a.id && $('#main').contains(a) ? a.id : null;
+  let s1 = null, s2 = null; try { s1 = a.selectionStart; s2 = a.selectionEnd; } catch {}
+  const enApp = S.pantalla === 'app';
+  $('#tabs').hidden = !enApp; $('#who').hidden = !enApp; document.querySelector('.help').hidden = !enApp;
+  if (!enApp) { $('#main').innerHTML = vAcceso(); return; }
+  renderTop();
+  const views = {inicio:vInicio, despensa:vDespensa, cocinar:vCocinar, mercado:vMercado, gastos:vGastos};
+  $('#main').innerHTML = (views[S.tab] || vInicio)();
+  if (fid) { const el = document.getElementById(fid); if (el) { el.focus(); try { if (s1 != null) el.setSelectionRange(s1, s2); } catch {} } }
+}
+function renderTop(){
+  const al = alertas(), nl = listaItems().filter(i => !i.carrito).length;
+  const badges = {despensa: al.vencidos.length + al.pronto.length, mercado: nl};
+  $('#tabs').innerHTML = TABS.map(([k,n]) => `<button class="tab" data-a="tab" data-t="${k}" ${S.tab===k?'aria-current="page"':''}>${ico(k)}<span>${n}</span>${badges[k] ? `<span class="badge ${k==='mercado'?'n':''}">${badges[k]}</span>` : ''}</button>`).join('');
+  const w = $('#who');
+  w.innerHTML = `<span class="av">${esc((S.quien||'?').slice(0,1).toUpperCase())}</span><span class="nm">${S.quien ? esc(S.quien) : '¿Quién eres?'}</span>`;
+}
+const cargando = k => !S.offline && !S.loaded[k];
+const hayEjemplos = () => [S.productos, S.compras, S.mermas, S.recetas].some(a => a.some(x => x.ejemplo));
+const bannerEjemplos = () => hayEjemplos() ? `<div class="banner"><p><b>Estás viendo datos de ejemplo</b> para que veas cómo funciona. Cuando quieras empezar con lo de tu casa, quítalos.</p><button class="btn sm" data-a="quitarEjemplos">Quitar ejemplos</button></div>` : '';
+
+function estBtns(cur, act, id=''){
+  return ['hay','poco','nohay'].map(e => `<button class="e-${e}" data-a="${act}" data-id="${id}" data-e="${e}" aria-pressed="${cur===e}" title="${EST[e].n}"><i></i><span>${e==='nohay'?'No hay':e==='poco'?'Poco':'Hay'}</span></button>`).join('');
+}
+function filaProducto(p){
+  const v = venceInfo(p);
+  return `<li class="item est-${p.estado}">
+    <span class="dot" style="--c:${(SECC[p.seccion]||SECC.alimentos).c}" title="${esc((SECC[p.seccion]||SECC.alimentos).n)}"></span>
+    <button class="item-name" data-a="editar" data-id="${p.id}"><b>${esc(p.nombre)}</b><small>${esc(p.categoria||'')}${v ? ` <span class="pill ${v.c}">${v.t}</span>` : ''}</small></button>
+    <div class="estados" role="group" aria-label="¿Cuánto hay de ${esc(p.nombre)}?">${estBtns(p.estado,'est',p.id)}</div>
+  </li>`;
+}
+
+/* ---------- Vista: Inicio ---------- */
+function vInicio(){
+  if (cargando('productos')) return `<div class="skel"></div><div class="skel"></div>`;
+  const al = alertas(), li = listaItems(), m = mesStats(mesKey(hoy())), P = S.config.presupuesto || 0;
+  const pj = proximoJueves();
+  const saludo = S.quien ? `Hola, ${esc(S.quien)}` : 'Hola';
+  const guia = S.guiaOculta ? '' : `<section class="card">
+      <div class="card-h"><div><h2>Así funciona, en 4 pasos</h2><p class="muted">La idea es que registrar tome segundos. Cada persona de la casa lo hace desde su celular.</p></div><button class="x" data-a="ocultarGuia" aria-label="Ocultar guía">×</button></div>
+      ${guiaPasos()}
+    </section>`;
+  const filaAlerta = (x, cls) => `<div class="alert ${cls}">
+      <span class="dot" style="--c:var(--${cls==='r'?'nohay':'poco'})"></span>
+      <div class="t"><b>${esc(x.p.nombre)}</b><small>${venceInfo(x.p).t} · ${esc(x.p.lugar||'')}</small></div>
+      ${cls==='r'
+        ? `<button class="btn sm" data-a="botar" data-id="${x.p.id}">Lo boté</button><button class="btn sm ghost" data-a="editar" data-id="${x.p.id}">Aún sirve</button>`
+        : `<button class="btn sm ghost" data-a="est" data-id="${x.p.id}" data-e="nohay">Ya se usó</button><button class="btn sm ghost" data-a="tab" data-t="cocinar">¿Qué cocino?</button>`}
+    </div>`;
+  const nAlert = al.vencidos.length + al.pronto.length;
+  const resumen = resumenJueves(al, li, m, P, pj);
+  const act = S.actividad.slice(0, 8);
+  return `
+    <section class="intro"><h1>${saludo}</h1><p>${fechaLarga(hoy()).replace(/^./, c => c.toUpperCase())}. Esto es lo que necesita atención en la casa.</p></section>
+    ${bannerEjemplos()}
+    ${listaParaEmpezar()}
+    ${guia}
+    <div class="sema">
+      <button class="sem r" data-a="tab" data-t="despensa"><span class="big num">${nAlert}</span><span class="lbl">Por vencer o vencidos</span><small>Aviso con ${S.config.diasAlerta||3} días de anticipación</small></button>
+      <button class="sem a" data-a="tab" data-t="mercado"><span class="big num">${li.filter(i=>!i.carrito).length}</span><span class="lbl">Por comprar</span><small>Se acabó o queda poco</small></button>
+      <button class="sem v" data-a="tab" data-t="gastos"><span class="big num">${corto(m.total)}</span><span class="lbl">Gastado este mes</span><small>de ${cop(P)} de presupuesto</small></button>
+    </div>
+    <section class="card">
+      <div class="card-h"><div><h2>Alertas de vencimiento</h2><p class="muted">Lo vencido, decide si lo botas. Lo que vence pronto, úsalo primero.</p></div></div>
+      ${nAlert ? `<div class="stack">${al.vencidos.map(x => filaAlerta(x,'r')).join('')}${al.pronto.map(x => filaAlerta(x,'a')).join('')}</div>`
+        : `<div class="empty"><b>Nada por vencer</b><span>Cuando un producto con fecha esté a ${S.config.diasAlerta||3} días o menos de vencerse, aparece aquí.</span></div>`}
+    </section>
+    ${resumen}
+    <section class="card">
+      <div class="card-h"><div><h2>Lo último en la casa</h2><p class="muted">Quién cambió qué, para que todos estén al tanto.</p></div></div>
+      ${act.length ? `<ul class="feed">${act.map(a => `<li><span><b>${esc(a.por)}</b> ${esc(a.txt)}</span><time>${hace(a.ts)}</time></li>`).join('')}</ul>` : `<p class="muted">Todavía no hay movimientos. Aparecerán cuando alguien marque, compre o cocine algo.</p>`}
+    </section>`;
+}
+function listaParaEmpezar(){
+  if (lsGet('arranque-oculto') === '1') return '';
+  const reales = a => a.filter(x => !x.ejemplo);
+  const mes = mesKey(hoy());
+  const pasos = [
+    {ok: !!S.quien, t:'Escribe tu nombre', d:'Para saber quién hace cada cambio.', b:'<button class="btn sm" data-a="quien">Escribir</button>'},
+    {ok: !hayEjemplos(), t:'Quita los datos de ejemplo', d:'Deja la app lista para lo de tu casa.', b:'<button class="btn sm" data-a="quitarEjemplos">Quitar</button>'},
+    {ok: reales(S.productos).length >= 20, t:'Carga el inventario inicial', d:`Lugar por lugar, con el catálogo, una lista o fotos. Llevas ${reales(S.productos).length}.`, b:'<button class="btn sm" data-a="carga">Cargar</button>'},
+    {ok: (S.miembros||[]).length >= 2, t:'Invita a la familia', d:'Agrega el correo de cada persona y envíales el enlace de la app.', b:'<button class="btn sm" data-a="tab" data-t="gastos">Agregar correos</button>'},
+    {ok: reales(S.compras).some(c => String(c.fecha).startsWith(mes)), t:'Registra lo que ya gastaste este mes', d:'Así el presupuesto arranca con la cifra real.', b:`<button class="btn sm" data-a="${S.imgs?'factura':'gasto'}">Registrar</button>`},
+    {ok: reales(S.recetas).length >= 3, t:'Guarda 3 recetas de la casa', d:'Las comidas que más hacen. La app te dirá si hay todo.', b:'<button class="btn sm" data-a="nuevaReceta">Agregar</button>'}
+  ];
+  const hechos = pasos.filter(p => p.ok).length;
+  if (hechos === pasos.length) return '';
+  return `<section class="card">
+    <div class="card-h"><div><span class="sec-t">Para empezar · ${hechos} de ${pasos.length}</span><h2>Deja la app lista en 6 pasos</h2></div><button class="x" data-a="ocultarArranque" aria-label="Ocultar">×</button></div>
+    <div class="progress"><span style="width:${hechos/pasos.length*100}%"></span></div>
+    <ul class="todo">${pasos.map(p => `<li class="${p.ok?'ok':''}"><span class="tick">${p.ok?'✓':''}</span><div><b>${p.t}</b><small>${p.d}</small></div>${p.ok ? '' : p.b}</li>`).join('')}</ul>
+  </section>`;
+}
+function guiaPasos(){
+  return `<div class="guide">
+    <div class="step"><span class="n">1</span><h3>Arma la despensa</h3><p>Usa la carga masiva: marca en el catálogo lo que hay en cada lugar o pega una lista.</p></div>
+    <div class="step"><span class="n">2</span><h3>Un toque cuando algo cambia</h3><p>Marca <b>Hay</b>, <b>Poco</b> o <b>No hay</b>. Lo que se acaba pasa solo a la lista del mercado.</p></div>
+    <div class="step"><span class="n">3</span><h3>Mercado de la quincena</h3><p>Lleva la lista, marca lo que echas al carrito y al final registra el total pagado.</p></div>
+    <div class="step"><span class="n">4</span><h3>Cada jueves, el resumen</h3><p>Cocina primero lo que se vence y revisa cómo va el presupuesto del mes.</p></div>
+  </div>
+  <div class="legend"><span class="pill hay">● Hay suficiente</span><span class="pill poco">◐ Queda poco: va a la lista</span><span class="pill nohay">○ Se acabó: va a la lista</span></div>`;
+}
+function resumenJueves(al, li, m, P, pj){
+  const esJueves = pj.diff === 0;
+  const d = hoy(), diasMes = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate(), dia = d.getDate();
+  const q = dia <= 15 ? 1 : 2, gq = q === 1 ? m.q1 : m.q2, pq = P/2;
+  const nohay = li.filter(i => i.motivo === 'nohay').length, poco = li.filter(i => i.motivo === 'poco').length;
+  return `<section class="card">
+    <div class="card-h"><div><span class="sec-t">${esJueves ? 'Hoy es jueves' : `Próximo resumen: jueves ${pj.d.getDate()} de ${pj.d.toLocaleDateString('es-CO',{month:'long'})}`}</span><h2>Resumen de la semana</h2><p class="muted">Revísalo cada jueves: hay tiempo para planear el fin de semana y adelantar la lista.</p></div></div>
+    <div class="grid3">
+      <div class="q"><span class="sec-t">Úsalo esta semana</span>${al.semana.length ? `<div class="chips">${al.semana.slice(0,8).map(x => `<span class="pill ${x.d<=(S.config.diasAlerta||3)?'poco':'neutral'}">${esc(x.p.nombre)} · ${x.d===0?'hoy':x.d+'d'}</span>`).join('')}</div>` : '<span class="muted small">Nada vence en los próximos 7 días.</span>'}</div>
+      <div class="q"><span class="sec-t">Para la lista</span><span><b class="num">${nohay}</b> se acabaron · <b class="num">${poco}</b> quedan pocos</span><button class="btn sm line" data-a="tab" data-t="mercado">Ver lista</button></div>
+      <div class="q"><span class="sec-t">${q}.ª quincena</span><span><b class="num">${cop(gq)}</b> de ${cop(pq)}</span><div class="progress"><span style="width:${Math.min(100, pq ? gq/pq*100 : 0)}%;${gq>pq?'background:var(--nohay)':''}"></span></div><span class="small muted">${gq > pq ? `Te pasaste ${cop(gq-pq)}` : `Quedan ${cop(pq-gq)}`}</span></div>
+      <div class="q"><span class="sec-t">Comida perdida este mes</span><span><b class="num">${cop(m.perdido)}</b> en ${m.nPerdido} producto${m.nPerdido===1?'':'s'}</span><span class="small muted">${m.perdido ? 'Revisa qué se está botando y compra menos de eso.' : 'Muy bien: nada se ha botado.'}</span></div>
+    </div>
+    ${al.semana.length && S.sample ? `<div class="tip">${ico('ia')}<span>Tienes ${al.semana.length} producto${al.semana.length===1?'':'s'} que vence${al.semana.length===1?'':'n'} esta semana. En <b>Cocinar</b> te sugiero recetas para aprovecharlos.</span></div>` : ''}
+  </section>`;
+}
+
+/* ---------- Vista: Despensa ---------- */
+function vDespensa(){
+  if (cargando('productos')) return `<div class="skel"></div>`;
+  const q = norm(S.q);
+  let ps = S.productos.filter(p => (S.fSecc === 'todas' || p.seccion === S.fSecc) && (S.fLugar === 'todos' || (p.lugar||'Otro') === S.fLugar) && (!q || norm(p.nombre).includes(q) || norm(p.categoria).includes(q)));
+  const ord = {nohay:2, poco:1, hay:0};
+  ps.sort((a,b) => { const da = a.vence && a.estado!=='nohay' ? dias(a.vence) : 9999, db_ = b.vence && b.estado!=='nohay' ? dias(b.vence) : 9999; return ord[a.estado]-ord[b.estado] || da-db_ || a.nombre.localeCompare(b.nombre,'es'); });
+  const grupos = LUGARES.map(l => ({l, items: ps.filter(p => (p.lugar||'Otro') === l)})).filter(g => g.items.length);
+  const cuenta = s => S.productos.filter(p => s === 'todas' || p.seccion === s).length;
+  const lugaresUsados = LUGARES.filter(l => S.productos.some(p => (p.lugar||'Otro') === l));
+  const total = S.productos.length;
+  return `
+    <section class="intro"><h1>Despensa</h1><p>Todo lo que hay en la casa, por lugar. Toca <b>Hay</b>, <b>Poco</b> o <b>No hay</b> cuando algo cambie; toca el nombre para editar la fecha o el lugar.</p></section>
+    ${bannerEjemplos()}
+    <div class="btns">
+      <button class="btn" data-a="carga">${ico('despensa')} Carga masiva</button>
+      ${S.imgs ? `<button class="btn ghost" data-a="fotoCocina">${ico('camara')} Actualizar con una foto</button>` : ''}
+      <button class="btn ghost" data-a="nuevo">${ico('mas')} Agregar producto</button>
+    </div>
+    ${total ? `<section class="card">
+      <div class="seg" role="group" aria-label="Tipo de producto">
+        ${[['todas','Todo'],['alimentos','Alimentos'],['aseo','Aseo'],['hogar','Mantenimiento']].map(([k,n]) => `<button data-a="fSecc" data-s="${k}" aria-pressed="${S.fSecc===k}">${k!=='todas'?`<span class="dot" style="--c:${SECC[k].c}"></span>`:''}${n} <span class="muted num">${cuenta(k)}</span></button>`).join('')}
+      </div>
+      <div class="toolbar">
+        <input type="search" id="q" data-i="q" value="${esc(S.q)}" placeholder="Buscar producto…" aria-label="Buscar producto">
+      </div>
+      <div class="chips" role="group" aria-label="Lugar">
+        <button class="chip" data-a="fLugar" data-l="todos" aria-pressed="${S.fLugar==='todos'}">Todos los lugares</button>
+        ${lugaresUsados.map(l => `<button class="chip" data-a="fLugar" data-l="${esc(l)}" aria-pressed="${S.fLugar===l}">${esc(l)}<span class="c num">${S.productos.filter(p => (p.lugar||'Otro')===l).length}</span></button>`).join('')}
+      </div>
+      ${grupos.length ? grupos.map(g => `<div class="group-h"><h3>${esc(g.l)}</h3><span class="c">${g.items.length}</span></div><ul class="items">${g.items.map(filaProducto).join('')}</ul>`).join('')
+        : `<div class="empty"><b>Sin resultados</b><span>Prueba con otro nombre o quita los filtros.</span></div>`}
+    </section>` : `<div class="empty">
+        <b>La despensa está vacía</b>
+        <span>La forma más rápida de empezar es la carga masiva: marca lo que tienes en un catálogo de la canasta familiar, pega una lista o usa fotos.</span>
+        <div class="btns"><button class="btn" data-a="carga">${ico('despensa')} Carga masiva</button><button class="btn ghost" data-a="nuevo">${ico('mas')} Agregar a mano</button></div>
+      </div>`}`;
+}
+
+/* ---------- Vista: Cocinar ---------- */
+function tieneIngrediente(ing){
+  const n = norm(ing); if (!n) return null;
+  const ws = n.split(' ').filter(w => w.length > 3);
+  return S.productos.find(p => p.seccion === 'alimentos' && p.estado !== 'nohay' && (() => {
+    const pn = norm(p.nombre);
+    return pn.includes(n) || n.includes(pn) || ws.some(w => pn.split(' ').some(x => x.startsWith(w.slice(0, Math.max(4, w.length-2)))));
+  })());
+}
+function tarjetaReceta(r, idx, esIA){
+  const ings = (r.ingredientes || r.usa || []).concat(esIA ? (r.falta||[]) : []);
+  const est = ings.map(i => ({i, ok: !!tieneIngrediente(i)}));
+  const faltan = est.filter(x => !x.ok);
+  return `<article class="receta">
+    <div class="card-h"><div><h3>${esc(r.nombre)}</h3><div class="meta">${r.tiempo ? `<span>${esc(r.tiempo)}</span>` : ''}${r.porciones ? `<span>· ${esc(r.porciones)} porciones</span>` : ''}${faltan.length ? `<span class="pill poco">Faltan ${faltan.length}</span>` : `<span class="pill hay">Se puede hacer ya</span>`}</div></div></div>
+    ${r.porque ? `<p class="small muted">${esc(r.porque)}</p>` : ''}
+    <div class="ing">${est.map(x => `<span class="${x.ok?'':'no'}">${x.ok?'✓':'✗'} ${esc(x.i)}</span>`).join('')}</div>
+    ${(r.pasos||[]).length ? `<details><summary>Ver preparación</summary><ol>${r.pasos.map(p => `<li>${esc(p)}</li>`).join('')}</ol></details>` : ''}
+    <div class="btns">
+      ${faltan.length ? `<button class="btn sm ghost" data-a="faltantes" data-src="${esIA?'ia':'casa'}" data-i="${idx}">Lo que falta a la lista</button>` : ''}
+      ${esIA ? `<button class="btn sm" data-a="guardarRecetaIA" data-i="${idx}">Guardar en recetas de la casa</button>` : `<button class="btn sm ghost danger" data-a="borrarReceta" data-id="${r.id}">${M.borrarReceta===r.id?'¿Seguro? Toca otra vez':'Borrar'}</button>`}
+    </div>
+  </article>`;
+}
+function vCocinar(){
+  if (cargando('productos')) return `<div class="skel"></div>`;
+  const al = alertas();
+  const prim = al.vencidos.concat(al.semana);
+  const disp = S.productos.filter(p => p.seccion === 'alimentos' && p.estado !== 'nohay');
+  const porCat = CATS.alimentos.map(c => ({c, ps: disp.filter(p => p.categoria === c)})).filter(g => g.ps.length);
+  const recetas = S.recetas.map(r => ({r, f: (r.ingredientes||[]).filter(i => !tieneIngrediente(i)).length})).sort((a,b) => a.f - b.f);
+  const ia = S.ia;
+  return `
+    <section class="intro"><h1>¿Qué cocino hoy?</h1><p>Primero lo que se va a dañar, luego lo que hay. Las recetas de la casa te dicen si tienes todo o qué falta.</p></section>
+    <section class="card">
+      <div class="card-h"><div><h2>Úsalo primero</h2><p class="muted">Vence en los próximos 7 días.</p></div></div>
+      ${prim.length ? `<div class="chips">${prim.map(x => `<span class="pill ${x.d<0?'nohay':x.d<=(S.config.diasAlerta||3)?'poco':'neutral'}">${esc(x.p.nombre)} · ${x.d<0?'vencido':x.d===0?'hoy':x.d===1?'mañana':x.d+' días'}</span>`).join('')}</div>` : `<p class="muted">Nada urgente. Puedes cocinar con libertad.</p>`}
+    </section>
+    ${S.sample ? `<section class="card ia-card">
+      <div class="card-h"><div><span class="sec-t">${ico('ia','')} Con inteligencia artificial</span><h2>Ideas de recetas con lo que hay</h2><p class="muted">Propone 3 recetas que aprovechan primero lo que se vence. Cuentan sal, aceite y agua como disponibles.</p></div></div>
+      <label class="fld"><span>¿Algo especial? <em>(opcional)</em></span><input id="iaPref" placeholder="Ej: almuerzo para 4, rápido, sin cerdo, para la lonchera" value="${esc(ia.pref||'')}"></label>
+      <div class="btns">
+        <button class="btn" data-a="sugerir" ${ia.estado==='cargando'||!disp.length?'disabled':''}>${ico('ia')} ${ia.recetas.length ? 'Otras ideas' : 'Sugerir 3 recetas'}</button>
+        ${ia.estado==='cargando' ? `<button class="btn ghost" data-a="pararIA">Detener</button>` : ''}
+      </div>
+      ${!disp.length ? `<p class="small muted">Primero registra alimentos en la Despensa.</p>` : ''}
+      ${ia.estado==='cargando' ? `<div class="loading"><span class="spinner"></span><span>Pensando recetas con lo que hay en la casa… puede tardar hasta un minuto.</span></div>` : ''}
+      ${ia.err ? `<div class="banner warn"><p>${esc(ia.err)}</p></div>` : ''}
+      ${ia.recetas.length ? `<div class="grid2">${ia.recetas.map((r,i) => tarjetaReceta(r, i, true)).join('')}</div>` : ''}
+    </section>` : ''}
+    <section class="card">
+      <div class="card-h"><div><h2>Recetas de la casa</h2><p class="muted">Las que ya les gustan. Primero aparecen las que se pueden hacer con lo que hay.</p></div><button class="btn sm ghost" data-a="nuevaReceta">${ico('mas')} Nueva receta</button></div>
+      ${recetas.length ? `<div class="grid2">${recetas.map(x => tarjetaReceta(x.r, S.recetas.indexOf(x.r), false)).join('')}</div>` : `<div class="empty"><b>Aún no hay recetas guardadas</b><span>Agrega las comidas que más hacen en casa${S.sample ? ' o guarda las ideas que te gusten' : ''}.</span></div>`}
+    </section>
+    <section class="card">
+      <div class="card-h"><div><h2>Lo que hay para cocinar</h2><p class="muted">${disp.length} alimentos disponibles.</p></div></div>
+      ${porCat.length ? porCat.map(g => `<div class="fld"><span class="sec-t">${esc(g.c)}</span><div class="chips">${g.ps.map(p => `<span class="pill ${p.estado==='poco'?'poco':'hay'}">${esc(p.nombre)}${p.estado==='poco'?' · poco':''}</span>`).join('')}</div></div>`).join('') : `<p class="muted">No hay alimentos registrados como disponibles.</p>`}
+    </section>`;
+}
+
+/* ---------- Vista: Mercado ---------- */
+function vMercado(){
+  if (cargando('productos') || cargando('lista')) return `<div class="skel"></div>`;
+  const li = listaItems(), enCarrito = li.filter(i => i.carrito).length;
+  const grupos = Object.keys(SECC).map(k => ({k, items: li.filter(i => i.seccion === k).sort((a,b) => a.carrito - b.carrito || a.nombre.localeCompare(b.nombre,'es'))})).filter(g => g.items.length);
+  const compras = S.compras.slice(0, 15);
+  return `
+    <section class="intro"><h1>Mercado</h1><p>La lista se llena sola con lo que se acaba o queda poco, y cualquiera puede agregar cosas. En el supermercado, marca lo que echas al carrito.</p></section>
+    <datalist id="dlProd">${S.productos.map(p => `<option value="${esc(p.nombre)}">`).join('')}</datalist>
+    <section class="card">
+      <div class="card-h"><div><h2>Lista de compras</h2><p class="muted num">${li.length ? `${enCarrito} de ${li.length} en el carrito` : 'No falta nada por ahora'}</p></div>
+        ${enCarrito ? `<button class="btn" data-a="terminar">Terminé el mercado</button>` : ''}</div>
+      ${li.length ? `<div class="progress" aria-hidden="true"><span style="width:${enCarrito/li.length*100}%"></span></div>` : ''}
+      <div class="addrow">
+        <input id="lNuevo" list="dlProd" placeholder="Agregar a la lista… (ej: aceite, pilas AA)" aria-label="Producto para agregar">
+        <select id="lSecc" aria-label="Tipo" style="width:auto">${Object.entries(SECC).map(([k,v]) => `<option value="${k}">${v.n}</option>`).join('')}</select>
+        <button class="btn ghost" data-a="lAgregar">${ico('mas')} Agregar</button>
+      </div>
+      ${grupos.map(g => `<div class="group-h"><span class="dot" style="--c:${SECC[g.k].c}"></span><h3>${SECC[g.k].n}</h3><span class="c">${g.items.length}</span></div>
+        <ul class="items">${g.items.map(i => `<li class="litem ${i.carrito?'done':''}">
+          <label class="check"><input type="checkbox" data-c="carrito" data-k="${i.key}" ${i.carrito?'checked':''}><span class="box"></span><span class="lname">${esc(i.nombre)}</span></label>
+          <span class="pill ${i.motivo==='nohay'?'nohay':i.motivo==='poco'?'poco':'neutral'}">${MOTIVO[i.motivo]}</span>
+          <button class="x sm" data-a="quitarLista" data-k="${i.key}" aria-label="Quitar ${esc(i.nombre)} de la lista" title="No comprar">×</button>
+        </li>`).join('')}</ul>`).join('')}
+      ${enCarrito ? `<div class="tip">${ico('factura')}<span>Al tocar <b>Terminé el mercado</b>, lo marcado vuelve a quedar como <b>Hay</b> en la despensa y luego registras el gasto${S.imgs ? ' con una foto de la factura' : ''}.</span></div>` : ''}
+    </section>
+    <section class="card">
+      <div class="card-h"><div><h2>Registrar un gasto</h2><p class="muted">El mercado de la quincena y también las compras pequeñas: la tienda, la panadería, la droguería.</p></div></div>
+      <div class="btns">
+        ${S.imgs ? `<button class="btn" data-a="factura">${ico('camara')} Foto de la factura</button>` : ''}
+        <button class="btn ${S.imgs?'ghost':''}" data-a="gasto">${ico('factura')} Escribir el total</button>
+      </div>
+    </section>
+    <section class="card">
+      <div class="card-h"><div><h2>Compras recientes</h2></div></div>
+      ${compras.length ? `<div>${compras.map(c => `<details class="compra"><summary>
+          <div class="t"><b>${esc(c.tienda || 'Compra')}</b><small class="muted">${fechaCorta(c.fecha)} · ${esc(c.por||'')}${c.ejemplo?' · ejemplo':''}</small></div>
+          <span class="pill ${c.tipo==='pequena'?'neutral':'hay'}">${c.tipo==='pequena'?'Compra pequeña':'Quincena'}</span>
+          <span class="v num">${cop(c.total)}</span></summary>
+          <div class="det">
+            ${Object.entries(repartir(c)).filter(([,v]) => v > 0).map(([k,v]) => `<div class="kv"><span>${k==='sin'?'Sin clasificar':SECC[k].n}</span><span class="num">${cop(v)}</span></div>`).join('')}
+            ${(c.items||[]).length ? `<details><summary class="small muted">Ver ${c.items.length} productos</summary><div class="stack" style="padding-top:6px">${c.items.map(it => `<div class="kv small"><span>${esc(it.nombre)}</span><span class="num">${it.valor?cop(it.valor):''}</span></div>`).join('')}</div></details>` : ''}
+            <div><button class="btn sm ghost danger" data-a="borrarCompra" data-id="${c.id}">${M.borrarCompra===c.id?'¿Seguro? Toca otra vez':'Borrar compra'}</button></div>
+          </div></details>`).join('')}</div>` : `<p class="muted">Aún no hay compras registradas.</p>`}
+    </section>`;
+}
+
+/* ---------- Vista: Gastos ---------- */
+function grafica6(){
+  const t = hoy(), P = S.config.presupuesto || 0, meses = [];
+  for (let i = 5; i >= 0; i--) { const d = new Date(t.getFullYear(), t.getMonth()-i, 1); meses.push({l: d.toLocaleDateString('es-CO',{month:'short'}).replace('.',''), v: mesStats(mesKey(d)).total, act: i===0}); }
+  const max = Math.max(P, ...meses.map(m => m.v), 1) * 1.18;
+  const W = 640, H = 250, pl = 10, pr = 10, pt = 28, pb = 32, cw = (W-pl-pr)/6, y = v => pt + (H-pt-pb)*(1 - v/max);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gasto de los últimos 6 meses">`;
+  for (let g = 1; g <= 3; g++) { const yy = pt + (H-pt-pb)*g/4; s += `<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" stroke="var(--line)" stroke-width="1"/>`; }
+  meses.forEach((m,i) => {
+    const x = pl + i*cw + cw*.2, w = cw*.6, yy = y(m.v), h = (H-pb) - yy;
+    const fill = P && m.v > P ? 'var(--nohay)' : m.act ? 'var(--accent)' : 'var(--accent-soft)';
+    if (m.v > 0) s += `<rect x="${x}" y="${yy}" width="${w}" height="${Math.max(h,2)}" rx="7" fill="${fill}"/>`;
+    s += `<text x="${x+w/2}" y="${(m.v>0?yy:H-pb)-8}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)" font-family="Figtree, sans-serif">${m.v>0?corto(m.v):'—'}</text>`;
+    s += `<text x="${x+w/2}" y="${H-10}" text-anchor="middle" font-size="13" fill="var(--muted)" font-family="Figtree, sans-serif" ${m.act?'font-weight="700"':''}>${m.l}</text>`;
+  });
+  if (P) s += `<line x1="${pl}" x2="${W-pr}" y1="${y(P)}" y2="${y(P)}" stroke="var(--sun)" stroke-width="2" stroke-dasharray="6 5"/><text x="${W-pr}" y="${y(P)-7}" text-anchor="end" font-size="12" font-weight="700" fill="var(--sun)" font-family="Figtree, sans-serif">Presupuesto ${corto(P)}</text>`;
+  return s + '</svg>';
+}
+function vGastos(){
+  if (cargando('compras')) return `<div class="skel"></div>`;
+  const d = hoy(), key = mesKey(d), m = mesStats(key), P = S.config.presupuesto || 0;
+  const diasMes = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate(), dia = d.getDate();
+  const ritmo = P * dia / diasMes, proy = dia >= 3 ? m.total / dia * diasMes : null;
+  const quedan = P - m.total, diasRest = diasMes - dia + 1;
+  const pct = P ? m.total / P * 100 : 0;
+  const nombreMes = d.toLocaleDateString('es-CO',{month:'long', year:'numeric'});
+  const seccRows = [['alimentos',SECC.alimentos.n,'var(--s-ali)'],['aseo',SECC.aseo.n,'var(--s-ase)'],['hogar',SECC.hogar.n,'var(--s-hog)'],['sin','Sin clasificar','var(--muted)']].filter(r => m.secc[r[0]] > 0);
+  const tiendas = Object.entries(m.tiendas).sort((a,b) => b[1]-a[1]).slice(0,5);
+  const mermas = S.mermas.filter(x => String(x.fecha).startsWith(key));
+  const q = (n, g) => { const pq = P/2; return `<div class="q"><span class="sec-t">${n===1?'1.ª quincena · días 1 a 15':`2.ª quincena · días 16 a ${diasMes}`}</span><span class="bigmoney num" style="font-size:26px">${cop(g)}</span><div class="progress"><span style="width:${Math.min(100, pq?g/pq*100:0)}%;${g>pq?'background:var(--nohay)':''}"></span></div><span class="small muted">de ${cop(pq)} · ${g>pq?`se pasó ${cop(g-pq)}`:`quedan ${cop(pq-g)}`}</span></div>`; };
+  return `
+    <section class="intro"><h1>Gastos</h1><p>Un solo presupuesto mensual para toda la canasta: alimentos, aseo, mantenimiento y dotación. Aquí ves cómo vas y en qué se va la plata.</p></section>
+    ${bannerEjemplos()}
+    <section class="card">
+      <span class="sec-t">${nombreMes}</span>
+      <div class="card-h"><div><span class="bigmoney num">${cop(m.total)}</span><span class="muted">gastado de ${cop(P)} (${Math.round(pct)}%)</span></div></div>
+      <div class="meter" aria-hidden="true"><span class="fill ${m.total>P?'over':''}" style="width:${Math.min(100,pct)}%"></span><span class="mid"></span>${P?`<span class="pace" style="left:${dia/diasMes*100}%" title="Lo esperado a hoy"></span>`:''}</div>
+      <div class="meter-l"><span>1.ª quincena</span><span>Línea punteada: lo esperado a hoy</span><span>2.ª quincena</span></div>
+      <div class="grid3">
+        <div class="q"><span class="sec-t">Comparado con el ritmo</span><b>${m.total <= ritmo ? `Vas ${cop(ritmo-m.total)} por debajo` : `Vas ${cop(m.total-ritmo)} por encima`}</b><span class="small muted">A hoy (día ${dia}) lo esperado era ${cop(ritmo)}.</span></div>
+        <div class="q"><span class="sec-t">Si sigues así</span><b>${proy ? `Cerrarías en ${cop(proy)}` : 'Aún es pronto'}</b><span class="small muted">${proy ? (proy > P ? `Unos ${cop(proy-P)} más que el presupuesto.` : `Te sobrarían unos ${cop(P-proy)}.`) : 'La proyección aparece desde el día 3.'}</span></div>
+        <div class="q"><span class="sec-t">Lo que queda</span><b>${quedan >= 0 ? cop(quedan) : `Te pasaste ${cop(-quedan)}`}</b><span class="small muted">${quedan > 0 ? `Para ${diasRest} días: unos ${cop(quedan/diasRest)} por día.` : 'Revisa qué se puede aplazar.'}</span></div>
+      </div>
+    </section>
+    <div class="grid2">${q(1, m.q1)}${q(2, m.q2)}</div>
+    <section class="card">
+      <div class="card-h"><div><h2>Últimos 6 meses</h2><p class="muted">Las barras rojas pasaron el presupuesto.</p></div></div>
+      <div class="chart">${grafica6()}</div>
+    </section>
+    <div class="grid2">
+      <section class="card">
+        <h2>¿En qué se fue?</h2>
+        ${seccRows.length ? seccRows.map(([k,n,c]) => `<div class="hbar"><span><span class="dot" style="--c:${c};display:inline-block;margin-right:6px"></span>${n}</span><b class="num">${cop(m.secc[k])}</b><div class="bar"><span style="width:${m.secc[k]/m.total*100}%;background:${c}"></span></div></div>`).join('') : `<p class="muted">Sin compras este mes.</p>`}
+        ${m.secc.sin > 0 ? `<p class="small muted">"Sin clasificar" es lo registrado solo con el total. Con la foto de la factura se clasifica solo.</p>` : ''}
+      </section>
+      <section class="card">
+        <h2>¿Dónde se compra?</h2>
+        ${tiendas.length ? tiendas.map(([t,v]) => `<div class="hbar"><span>${esc(t)}</span><b class="num">${cop(v)}</b><div class="bar"><span style="width:${v/m.total*100}%;background:var(--accent)"></span></div></div>`).join('') : `<p class="muted">Sin compras este mes.</p>`}
+        ${m.peq.n ? `<div class="tip">${ico('bombillo')}<span>Las <b>compras pequeñas</b> van en ${cop(m.peq.total)} (${m.peq.n} compra${m.peq.n===1?'':'s'}). Suelen pasar desapercibidas: si son muchas, refuerza la lista de la quincena.</span></div>` : ''}
+      </section>
+    </div>
+    <section class="card">
+      <div class="card-h"><div><h2>Comida perdida</h2><p class="muted">Lo que se botó por vencido o dañado este mes.</p></div><span class="bigmoney num" style="font-size:28px;color:${m.perdido?'var(--nohay)':'var(--hay)'}">${cop(m.perdido)}</span></div>
+      ${mermas.length ? `<div class="stack">${mermas.map(x => `<div class="kv small"><span>${esc(x.nombre)} <span class="muted">· ${esc(x.motivo||'')} · ${fechaCorta(x.fecha)} · ${esc(x.por||'')}</span></span><span class="num">${x.valor?cop(x.valor):'—'}</span></div>`).join('')}</div>
+        <div class="tip">${ico('bombillo')}<span>Si un producto se repite aquí, compra menos cantidad o cocínalo apenas veas la alerta.</span></div>` : `<p class="muted">Nada se ha botado este mes.</p>`}
+    </section>
+    <section class="card">
+      <h2>Ajustes</h2>
+      <div class="row2">
+        <label class="fld"><span>Presupuesto mensual (COP)</span><input id="aPresu" inputmode="numeric" value="${P}"></label>
+        <label class="fld"><span>Avisar vencimientos con</span><select id="aDias">${[1,2,3,4,5,7].map(n => `<option value="${n}" ${n===(S.config.diasAlerta||3)?'selected':''}>${n} día${n===1?'':'s'} de anticipación</option>`).join('')}</select></label>
+      </div>
+      <div class="fld"><span>Personas de la casa</span><div class="chips">${(S.config.familia||[]).map(f => `<span class="chip">${esc(f)} <button class="x sm" data-a="quitarFamilia" data-n="${esc(f)}" aria-label="Quitar ${esc(f)}" style="width:20px;height:20px;font-size:15px">×</button></span>`).join('') || '<span class="muted small">Cada persona aparece aquí al escribir su nombre.</span>'}</div></div>
+      <div><button class="btn" data-a="aGuardar">Guardar ajustes</button></div>
+    </section>
+    <section class="card">
+      <div class="card-h"><div><h2>Correos con acceso</h2><p class="muted">Solo estos correos pueden entrar a la app. Agrega el de cada persona de la casa y envíale el enlace.</p></div></div>
+      <div class="chips">${(S.miembros||[]).map(m => `<span class="chip">${esc(m)}${m === S.email ? ' <span class="c">(tú)</span>' : ` <button class="x sm" data-a="quitarMiembro" data-e="${esc(m)}" aria-label="Quitar ${esc(m)}" style="width:20px;height:20px;font-size:15px">×</button>`}</span>`).join('')}</div>
+      <div class="addrow"><input id="aMiembro" type="email" placeholder="correo@ejemplo.com" aria-label="Correo para dar acceso"><button class="btn ghost" data-a="agregarMiembro">${ico('mas')} Dar acceso</button></div>
+      <div class="kv small"><span class="muted">Entraste como ${esc(S.email||'')}</span><button class="btn sm ghost" data-a="salir">Cerrar sesión</button></div>
+    </section>`;
+}
+
+/* ---------- Modal ---------- */
+function abrirModal(html, enfocar = true){
+  const m = $('#modal'); m.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">${html}</div>`; m.hidden = false;
+  const f = m.querySelector('input:not([type=checkbox]):not([type=file]),select,textarea'); if (enfocar && f && window.innerWidth > 700) f.focus();
+}
+function cerrarModal(){ const m = $('#modal'); m.hidden = true; m.innerHTML = ''; if (M.ctl) M.ctl.abort(); M = {}; }
+const cab = t => `<header class="sheet-h"><h2>${t}</h2><button class="x" data-a="cerrar" aria-label="Cerrar">×</button></header>`;
+
+/* Producto */
+function modalProducto(id, preset = {}){
+  const p = id ? byId(id) : {nombre:'', seccion:'alimentos', categoria:CATS.alimentos[0], lugar:'Alacena', estado:'hay', vence:'', ...preset};
+  if (!p) return;
+  M = {tipo:'prod', id, seccion:p.seccion||'alimentos', estado:p.estado||'hay', confirmar:false};
+  abrirModal(`${cab(id ? 'Editar producto' : 'Nuevo producto')}
+    <div class="sheet-b">
+      <label class="fld"><span>Nombre</span><input id="pNombre" value="${esc(p.nombre)}" placeholder="Ej: Leche entera, Arroz, Detergente, Pilas AA" autocomplete="off"></label>
+      <div class="fld"><span>¿Qué tipo de producto es?</span><div class="seg" id="pSecc">${Object.entries(SECC).map(([k,v]) => `<button data-a="pSecc" data-s="${k}" aria-pressed="${M.seccion===k}"><span class="dot" style="--c:${v.c}"></span>${k==='hogar'?'Mantenimiento':v.n}</button>`).join('')}</div></div>
+      <div class="row2">
+        <label class="fld"><span>Categoría</span><select id="pCat">${opts(CATS[M.seccion], p.categoria)}</select></label>
+        <label class="fld"><span>¿Dónde se guarda?</span><select id="pLugar">${opts(LUGARES, p.lugar)}</select></label>
+      </div>
+      <div class="fld"><span>¿Cuánto hay?</span><div class="estados big" id="pEst">${estBtns(M.estado,'pEst')}</div></div>
+      <div class="fld"><span>Fecha de vencimiento <em>(opcional)</em></span>
+        <input type="date" id="pVence" value="${esc(p.vence||'')}">
+        <div class="chips">${[['+3 días',3],['+1 semana',7],['+15 días',15],['+1 mes',30]].map(([t,d]) => `<button class="chip" data-a="venceMas" data-d="${d}">${t}</button>`).join('')}<button class="chip" data-a="venceMas" data-d="">Sin fecha</button></div>
+        <small class="hint">Ponla solo a lo que se daña: lácteos, carnes, verduras, pan. El aseo y los granos no la necesitan.</small>
+      </div>
+      ${id && p.por ? `<small class="hint">Último cambio: ${esc(p.por)}${p.actualizado ? ', ' + hace(p.actualizado) : ''}.</small>` : ''}
+    </div>
+    <footer class="sheet-f">
+      ${id ? `<button class="btn ghost danger" data-a="pBorrar" id="pBorrarBtn">Eliminar</button>${p.seccion==='alimentos' ? `<button class="btn ghost" data-a="botar" data-id="${id}">Lo boté</button>` : ''}` : ''}
+      <span class="sp"></span><button class="btn" data-a="pGuardar">Guardar</button>
+    </footer>`);
+}
+async function guardarProducto(){
+  const nombre = $('#pNombre').value.trim();
+  if (!nombre) { toast('Escribe el nombre del producto.'); $('#pNombre').focus(); return; }
+  const data = {nombre, seccion:M.seccion, categoria:$('#pCat').value, lugar:$('#pLugar').value, estado:M.estado, vence:$('#pVence').value || '', venceAprox:false, por:quien(), actualizado:Date.now()};
+  if (data.estado === 'hay') data.noComprar = false;
+  let id = M.id;
+  if (!id) { const ex = porNombre(nombre); if (ex) id = ex.id; }
+  const ok = await guardar(async () => {
+    if (id) await S.db.doc('productos/'+id).update(data);
+    else { await colec('productos').add({...data, enLista:false, carrito:false, noComprar:false}); registrar(`agregó ${nombre} a la despensa`); }
+  }, id && !M.id ? 'Ya existía: lo actualicé.' : 'Guardado.');
+  if (ok) cerrarModal();
+}
+
+/* Lo boté */
+function modalBotar(id){
+  const p = byId(id); if (!p) return;
+  M = {tipo:'botar', id, motivo: p.vence && dias(p.vence) < 0 ? 'Se venció' : 'Se dañó'};
+  abrirModal(`${cab(`¿Se perdió ${esc(p.nombre)}?`)}
+    <div class="sheet-b">
+      <p class="muted">Registrarlo ayuda a ver cuánta plata se va a la basura y qué conviene comprar en menor cantidad.</p>
+      <div class="fld"><span>¿Qué pasó?</span><div class="seg">${['Se venció','Se dañó','Otro'].map(t => `<button data-a="bMotivo" data-m="${t}" aria-pressed="${M.motivo===t}">${t}</button>`).join('')}</div></div>
+      <div class="fld"><span>¿Cuánto valía más o menos? <em>(opcional)</em></span>
+        <input id="bValor" inputmode="numeric" placeholder="$ 0" value="${p.ultimoPrecio ? p.ultimoPrecio : ''}">
+        <div class="chips">${[2000,5000,10000,20000,40000].map(v => `<button class="chip" data-a="bValor" data-v="${v}">${cop(v)}</button>`).join('')}</div>
+      </div>
+    </div>
+    <footer class="sheet-f"><span class="sp"></span><button class="btn ghost" data-a="cerrar">Cancelar</button><button class="btn" data-a="bGuardar">Registrar pérdida</button></footer>`);
+}
+async function guardarBotar(){
+  const p = byId(M.id); if (!p) return;
+  const valor = pesos($('#bValor').value);
+  const ok = await guardar(async () => {
+    await colec('mermas').add({fecha: iso(hoy()), nombre: p.nombre, productoId: p.id, valor, motivo: M.motivo, por: quien(), ts: Date.now()});
+    await S.db.doc('productos/'+p.id).update({estado:'nohay', vence:'', venceAprox:false, noComprar:false, por:quien(), actualizado:Date.now()});
+    registrar(`registró que se botó ${p.nombre}${valor ? ` (${cop(valor)})` : ''}`);
+  }, 'Registrado. Pasó a la lista de compras.');
+  if (ok) cerrarModal();
+}
+
+/* ¿Quién eres? */
+function modalQuien(){
+  const fam = S.config.familia || [];
+  abrirModal(`${cab('¿Quién está usando la app?')}
+    <div class="sheet-b">
+      <p class="muted">Así todos saben quién marcó, compró o botó algo. Se guarda en este celular.</p>
+      ${fam.length ? `<div class="chips">${fam.map(f => `<button class="chip" data-a="soy" data-n="${esc(f)}" aria-pressed="${S.quien===f}">${esc(f)}</button>`).join('')}</div>` : ''}
+      <label class="fld"><span>${fam.length ? '¿No estás en la lista? Escribe tu nombre' : 'Tu nombre'}</span><input id="qNombre" placeholder="Ej: Tania, Papá, Juan" value=""></label>
+    </div>
+    <footer class="sheet-f"><span class="sp"></span><button class="btn" data-a="soyNuevo">Listo</button></footer>`);
+}
+async function fijarQuien(n){
+  n = n.trim(); if (!n) return;
+  S.quien = n; lsSet('quien', n);
+  const fam = S.config.familia || [];
+  if (S.db && !fam.some(f => norm(f) === norm(n))) {
+    const nueva = [...fam, n];
+    await guardar(() => S.configExiste ? S.db.doc('config/general').update({familia:nueva}) : S.db.doc('config/general').set({...S.config, familia:nueva}));
+  }
+  cerrarModal(); render();
+}
+
+/* Guía */
+function modalGuia(){
+  abrirModal(`${cab('Cómo funciona')}<div class="sheet-b">${guiaPasos()}
+    <div class="tip">${ico('bombillo')}<span>Para que funcione, todos en la casa deben marcar cuando algo se acaba. Es un solo toque.</span></div></div>
+    <footer class="sheet-f"><span class="sp"></span><button class="btn" data-a="cerrar">Entendido</button></footer>`);
+}
+
+/* Gasto manual */
+function modalGasto(pre = {}){
+  M = {tipo:'gasto', tipoCompra: pre.tipo || 'quincena'};
+  const tiendas = [...new Set(S.compras.map(c => c.tienda).filter(Boolean))];
+  abrirModal(`${cab('Registrar un gasto')}
+    <div class="sheet-b">
+      ${S.imgs ? `<div class="banner"><p>¿Tienes la factura? Con una foto se clasifica sola por tipo de producto.</p><button class="btn sm" data-a="factura">${ico('camara')} Usar foto</button></div>` : ''}
+      <div class="fld"><span>¿Qué tipo de compra fue?</span><div class="seg">${[['quincena','Mercado de quincena'],['pequena','Compra pequeña']].map(([k,n]) => `<button data-a="gTipo" data-t="${k}" aria-pressed="${M.tipoCompra===k}">${n}</button>`).join('')}</div></div>
+      <div class="row2">
+        <label class="fld"><span>Fecha</span><input type="date" id="gFecha" value="${iso(hoy())}"></label>
+        <label class="fld"><span>Tienda</span><input id="gTienda" list="dlTiendas" placeholder="Ej: Éxito, D1, tienda de la esquina"><datalist id="dlTiendas">${tiendas.map(t => `<option value="${esc(t)}">`).join('')}</datalist></label>
+      </div>
+      <label class="fld"><span>Total pagado (COP)</span><input id="gTotal" inputmode="numeric" placeholder="$ 0"></label>
+      <details><summary class="small" style="cursor:pointer;font-weight:700;color:var(--accent)">Repartir por tipo (opcional)</summary>
+        <div class="row2" style="padding-top:10px">${Object.entries(SECC).map(([k,v]) => `<label class="fld"><span>${v.n}</span><input id="gR_${k}" inputmode="numeric" placeholder="$ 0"></label>`).join('')}</div>
+        <small class="hint">Lo que no repartas queda como "sin clasificar". No es obligatorio.</small>
+      </details>
+    </div>
+    <footer class="sheet-f"><span class="sp"></span><button class="btn ghost" data-a="cerrar">Cancelar</button><button class="btn" data-a="gGuardar">Guardar gasto</button></footer>`);
+}
+async function guardarGasto(){
+  const total = pesos($('#gTotal').value);
+  if (!total) { toast('Escribe el total pagado.'); $('#gTotal').focus(); return; }
+  const reparto = {}; let hayRep = false;
+  for (const k of Object.keys(SECC)) { const v = pesos($('#gR_'+k).value); if (v) { reparto[k] = v; hayRep = true; } }
+  const c = {fecha: $('#gFecha').value || iso(hoy()), tienda: $('#gTienda').value.trim(), total, tipo: M.tipoCompra, fuente:'manual', por: quien(), creado: Date.now()};
+  if (hayRep) c.reparto = reparto;
+  const ok = await guardar(async () => { await colec('compras').add(c); registrar(`registró una compra de ${cop(total)}${c.tienda ? ' en ' + c.tienda : ''}`); }, 'Gasto guardado.');
+  if (ok) cerrarModal();
+}
+
+/* Factura con foto */
+function modalFactura(){
+  M = {tipo:'factura', paso:'foto', tipoCompra:'quincena'};
+  pintarFactura();
+}
+function zonaFoto(id, titulo, texto){
+  return `<label class="drop">${ico('camara')}<b>${titulo}</b><span class="small muted">${texto}</span>
+    <input type="file" id="${id}" accept="${esc((S.imgs?.mediaTypes||['image/jpeg','image/png']).join(','))}" ${(S.imgs?.maxCount||1) > 1 ? 'multiple' : ''}>
+    <span class="btn sm">Elegir o tomar foto</span></label>`;
+}
+function pintarFactura(){
+  if (M.paso === 'foto') {
+    abrirModal(`${cab('Foto de la factura')}
+      <div class="sheet-b">
+        ${zonaFoto('fFile','Toma una foto de la factura','Si es larga, toma varias fotos de arriba a abajo y elígelas todas.')}
+        <div class="tip">${ico('bombillo')}<span>Para que se lea bien: factura completa y estirada, buena luz y sin sombras. Siempre podrás revisar y corregir antes de guardar.</span></div>
+      </div>`);
+  } else if (M.paso === 'leyendo') {
+    abrirModal(`${cab('Leyendo la factura')}
+      <div class="sheet-b"><div class="loading"><span class="spinner"></span><span>Leyendo productos y precios… puede tardar hasta un minuto.</span></div></div>
+      <footer class="sheet-f"><span class="sp"></span><button class="btn ghost" data-a="cerrar">Cancelar</button></footer>`);
+  } else {
+    const r = M.res, suma = M.items.filter(i => i.inc).reduce((a,i) => a + (+i.valor||0), 0);
+    abrirModal(`${cab('Revisa antes de guardar')}
+      <div class="sheet-b">
+        <p class="muted">Corrige lo que haga falta. Al guardar se registra el gasto y estos productos quedan como <b>Hay</b> en la despensa.</p>
+        <div class="fld"><span>¿Qué tipo de compra fue?</span><div class="seg">${[['quincena','Mercado de quincena'],['pequena','Compra pequeña']].map(([k,n]) => `<button data-a="fTipo" data-t="${k}" aria-pressed="${M.tipoCompra===k}">${n}</button>`).join('')}</div></div>
+        <div class="row2">
+          <label class="fld"><span>Tienda</span><input id="fTienda" value="${esc(r.tienda||'')}"></label>
+          <label class="fld"><span>Fecha</span><input type="date" id="fFecha" value="${esc(/^\d{4}-\d{2}-\d{2}$/.test(r.fecha||'') ? r.fecha : iso(hoy()))}"></label>
+          <label class="fld"><span>Total pagado</span><input id="fTotal" inputmode="numeric" value="${r.total ? Math.round(r.total) : Math.round(suma)}"></label>
+        </div>
+        <div class="fld"><span>Productos (${M.items.length})</span>
+          <ul class="rev">${M.items.map((it,i) => `<li class="${it.inc?'':'off'}">
+            <input type="checkbox" data-c="fInc" data-i="${i}" ${it.inc?'checked':''} aria-label="Incluir ${esc(it.nombre)}">
+            <div class="fields">
+              <input id="fN_${i}" value="${esc(it.nombre)}" aria-label="Nombre">
+              <select id="fS_${i}" aria-label="Tipo">${Object.entries(SECC).map(([k,v]) => `<option value="${k}" ${it.seccion===k?'selected':''}>${k==='hogar'?'Mantenimiento':v.n}</option>`).join('')}</select>
+              <input id="fV_${i}" inputmode="numeric" value="${it.valor ? Math.round(it.valor) : ''}" aria-label="Valor">
+            </div>
+            <small>${it.texto ? `En la factura: "${esc(it.texto)}"` : ''}${it.existe ? ' · ya está en la despensa' : ' · nuevo en la despensa'}${it.diasVence ? ` · dura ~${it.diasVence} días` : ''}</small>
+          </li>`).join('')}</ul>
+        </div>
+        <div class="kv"><span class="muted">Suma de productos marcados</span><b class="num">${cop(suma)}</b></div>
+      </div>
+      <footer class="sheet-f"><button class="btn ghost" data-a="factura">Otra foto</button><span class="sp"></span><button class="btn" data-a="fGuardar" id="fGuardarBtn">Guardar compra</button></footer>`);
+  }
+}
+async function leerFactura(files){
+  if (!files || !files.length) return;
+  M.paso = 'leyendo'; pintarFactura();
+  const ctl = new AbortController(); M.ctl = ctl;
+  const casa = S.productos.map(p => p.nombre).slice(0, 300);
+  const prompt = `Lee la(s) foto(s) de esta factura de compra en Colombia (pesos colombianos; los puntos separan miles: "12.500" son 12500).
+Responde SOLO un objeto JSON con esta forma:
+{"tienda": string|null, "fecha": "AAAA-MM-DD"|null, "total": number|null, "items": [{"texto": "como aparece en la factura", "nombre": "nombre claro y corto en español", "seccion": "alimentos"|"aseo"|"hogar", "categoria": string, "valor": number, "perecedero": boolean, "diasVence": number|null}]}
+Reglas:
+- "valor" es el valor total pagado por esa línea, en pesos, sin puntos.
+- "total" es el valor final pagado de la factura.
+- No incluyas como productos: descuentos, IVA, subtotales, bolsas, propinas ni medios de pago.
+- seccion "alimentos" = comida y bebidas; "aseo" = aseo personal, limpieza, lavandería, papel higiénico y desechables; "hogar" = mantenimiento y dotación (bombillos, pilas, ferretería, menaje de cocina, toallas, sábanas).
+- categoria debe ser exactamente una de estas, según la sección:
+  alimentos: ${CATS.alimentos.join(' | ')}
+  aseo: ${CATS.aseo.join(' | ')}
+  hogar: ${CATS.hogar.join(' | ')}
+- "diasVence": solo para perecederos, días aproximados que dura en buen estado desde la compra (leche 7, carne 3, pan 4, verduras 7). Si no es perecedero, null.
+- Si un producto corresponde a uno de esta lista de la casa, usa exactamente ese nombre: ${JSON.stringify(casa)}`;
+  try {
+    const res = await S.sample.json(prompt, {images: files, signal: ctl.signal});
+    if (M.tipo !== 'factura') return;
+    const items = Array.isArray(res?.items) ? res.items : [];
+    if (!items.length && !res?.total) throw {code:'vacio'};
+    M.res = res || {};
+    M.items = items.map(it => {
+      const seccion = SECC[it.seccion] ? it.seccion : 'alimentos';
+      const categoria = CATS[seccion].includes(it.categoria) ? it.categoria : CATS[seccion][CATS[seccion].length-1];
+      return {texto: String(it.texto||''), nombre: String(it.nombre||it.texto||'').trim(), seccion, categoria, valor: Math.round(+it.valor||0), perecedero: !!it.perecedero, diasVence: +it.diasVence || null, inc: true, existe: !!porNombre(it.nombre)};
+    });
+    M.paso = 'revisar'; pintarFactura();
+  } catch (e) {
+    if (M.tipo !== 'factura' || e?.code === 'cancelled') return;
+    M.paso = 'foto'; pintarFactura();
+    toast(mensajeIA(e, 'No pude leer la factura. Prueba con una foto más clara o escribe el total.'));
+  }
+}
+function leerRevisionFactura(){
+  M.items.forEach((it, i) => {
+    const n = document.getElementById('fN_'+i); if (!n) return;
+    it.nombre = n.value.trim(); it.valor = pesos(document.getElementById('fV_'+i).value);
+    const s = document.getElementById('fS_'+i).value;
+    if (s !== it.seccion) { it.seccion = s; it.categoria = CATS[s][CATS[s].length-1]; }
+  });
+  M.res.tienda = $('#fTienda').value; M.res.fecha = $('#fFecha').value; M.res.total = pesos($('#fTotal').value);
+}
+async function marcarComprado(it, fecha){
+  const p = porNombre(it.nombre);
+  const venceN = it.perecedero && it.diasVence ? sumarDias(fecha, it.diasVence) : (VIDA[it.categoria] && it.seccion === 'alimentos' && it.perecedero ? sumarDias(fecha, VIDA[it.categoria]) : '');
+  if (p) {
+    const upd = {estado:'hay', carrito:false, enLista:false, noComprar:false, por:quien(), actualizado:Date.now()};
+    if (it.valor) upd.ultimoPrecio = it.valor;
+    if (venceN) { upd.vence = venceN; upd.venceAprox = true; } else if (p.estado === 'nohay') { upd.vence = ''; }
+    await S.db.doc('productos/'+p.id).update(upd);
+  } else {
+    await colec('productos').add({nombre: it.nombre, seccion: it.seccion, categoria: it.categoria, lugar: lugarSugerido(it.seccion, it.categoria), estado:'hay', vence: venceN, venceAprox: !!venceN, ultimoPrecio: it.valor || 0, enLista:false, carrito:false, noComprar:false, por:quien(), actualizado:Date.now()});
+  }
+  for (const l of S.lista.filter(l => norm(l.nombre) === norm(it.nombre))) await S.db.doc('lista/'+l.id).delete();
+}
+async function guardarFactura(){
+  leerRevisionFactura();
+  const items = M.items.filter(i => i.inc && i.nombre);
+  const total = M.res.total || items.reduce((a,i) => a + i.valor, 0);
+  if (!total) { toast('Escribe el total pagado.'); return; }
+  const btn = $('#fGuardarBtn'); if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+  const fecha = M.res.fecha || iso(hoy());
+  const ok = await guardar(async () => {
+    await colec('compras').add({fecha, tienda: (M.res.tienda||'').trim(), total, tipo: M.tipoCompra, fuente:'factura', items: items.map(i => ({nombre:i.nombre, seccion:i.seccion, categoria:i.categoria, valor:i.valor})), por: quien(), creado: Date.now()});
+    for (const it of items) await marcarComprado(it, fecha);
+    registrar(`registró la factura${M.res.tienda ? ' de ' + M.res.tienda : ''} por ${cop(total)} (${items.length} productos)`);
+  }, `Listo: compra guardada y ${items.length} productos quedaron como Hay.`);
+  if (ok) cerrarModal(); else if (btn) { btn.disabled = false; btn.textContent = 'Guardar compra'; }
+}
+
+/* Foto de la cocina */
+function modalFotoCocina(){
+  M = {tipo:'cocina', paso:'foto', lugar: S.fLugar !== 'todos' ? S.fLugar : 'Nevera'};
+  pintarCocina();
+}
+function pintarCocina(){
+  if (M.paso === 'foto') {
+    abrirModal(`${cab('Actualizar con una foto')}
+      <div class="sheet-b">
+        <div class="fld"><span>¿Qué lugar vas a fotografiar?</span><div class="chips">${LUGARES.filter(l => l !== 'Otro').map(l => `<button class="chip" data-a="cLugar" data-l="${l}" aria-pressed="${M.lugar===l}">${l}</button>`).join('')}</div></div>
+        ${zonaFoto('cFile', `Foto de: ${esc(M.lugar)}`, 'Abre la puerta, toma la foto de frente y con buena luz. Puedes tomar varias (cada repisa).')}
+        <div class="tip">${ico('bombillo')}<span>Te mostraré lo que vi y lo que no vi. Nada se cambia sin que lo confirmes. Lo que está detrás o dentro de bolsas puede no verse.</span></div>
+      </div>`);
+  } else if (M.paso === 'leyendo') {
+    abrirModal(`${cab('Mirando la foto')}
+      <div class="sheet-b"><div class="loading"><span class="spinner"></span><span>Identificando productos en ${esc(M.lugar)}… puede tardar hasta un minuto.</span></div></div>
+      <footer class="sheet-f"><span class="sp"></span><button class="btn ghost" data-a="cerrar">Cancelar</button></footer>`);
+  } else {
+    const ch = M.cambios;
+    const fila = (c, i) => `<label class="chk"><input type="checkbox" data-c="cInc" data-i="${i}" ${c.inc?'checked':''}><span><b>${esc(c.nombre)}</b><br><small class="muted">${c.desc}</small></span>${c.pill}</label>`;
+    const grupo = (t, sub, f) => { const xs = ch.map((c,i) => [c,i]).filter(([c]) => f(c)); return xs.length ? `<div class="fld"><span>${t}</span>${sub ? `<small class="hint">${sub}</small>` : ''}<div class="stack">${xs.map(([c,i]) => fila(c,i)).join('')}</div></div>` : ''; };
+    abrirModal(`${cab(`Lo que vi en ${esc(M.lugar)}`)}
+      <div class="sheet-b">
+        ${ch.length ? '' : `<div class="empty"><b>Todo coincide</b><span>Lo que se ve en la foto ya estaba registrado igual.</span></div>`}
+        ${grupo('Nuevos para la despensa', '', c => c.k === 'nuevo')}
+        ${grupo('Cambios de estado', '', c => c.k === 'estado')}
+        ${grupo('No los vi', 'Desmarcados: márcalos solo si de verdad se acabaron.', c => c.k === 'novisto')}
+        ${grupo('Se ven en mal estado', 'Márcalos si los vas a botar: se registra la pérdida.', c => c.k === 'mal')}
+        ${M.iguales ? `<small class="hint">${M.iguales} producto${M.iguales===1?'':'s'} sin cambios.</small>` : ''}
+      </div>
+      <footer class="sheet-f"><button class="btn ghost" data-a="fotoCocina">Otra foto</button><span class="sp"></span><button class="btn" data-a="cAplicar" id="cAplicarBtn" ${ch.length?'':'disabled'}>Aplicar cambios</button></footer>`);
+  }
+}
+async function leerCocina(files){
+  if (!files || !files.length) return;
+  M.paso = 'leyendo'; pintarCocina();
+  const ctl = new AbortController(); M.ctl = ctl;
+  const aqui = S.productos.filter(p => (p.lugar||'Otro') === M.lugar).map(p => ({nombre:p.nombre, estado:p.estado}));
+  const otros = S.productos.filter(p => (p.lugar||'Otro') !== M.lugar).map(p => p.nombre).slice(0, 250);
+  const prompt = `Estas fotos muestran "${M.lugar}" en una casa en Colombia. Identifica los productos que se ven con claridad (alimentos, productos de aseo o artículos del hogar).
+Productos registrados en este lugar (con su estado): ${JSON.stringify(aqui)}
+Otros productos registrados en la casa: ${JSON.stringify(otros)}
+Responde SOLO un objeto JSON con esta forma:
+{"vistos":[{"nombre": string, "registrado": boolean, "estado": "hay"|"poco", "seccion": "alimentos"|"aseo"|"hogar", "categoria": string}], "noVistos":[string], "malEstado":[{"nombre": string, "nota": string}]}
+Reglas:
+- Si lo que ves corresponde a un producto registrado, usa exactamente ese nombre y "registrado": true.
+- "poco" si el envase se ve casi vacío o queda poca cantidad; si no, "hay".
+- "noVistos": nombres de productos registrados EN ESTE LUGAR que no aparecen en las fotos.
+- "malEstado": alimentos que se ven dañados, marchitos o con moho.
+- No inventes productos que no se distinguen con claridad. Usa nombres cortos en español (ej: "Leche entera", "Huevos", "Tomate").
+- categoria debe ser una de: alimentos: ${CATS.alimentos.join(' | ')}; aseo: ${CATS.aseo.join(' | ')}; hogar: ${CATS.hogar.join(' | ')}`;
+  try {
+    const r = await S.sample.json(prompt, {images: files, signal: ctl.signal});
+    if (M.tipo !== 'cocina') return;
+    const cambios = []; let iguales = 0;
+    for (const v of (Array.isArray(r?.vistos) ? r.vistos : [])) {
+      const nombre = String(v.nombre||'').trim(); if (!nombre) continue;
+      const est = v.estado === 'poco' ? 'poco' : 'hay';
+      const p = porNombre(nombre);
+      if (p) {
+        if (p.estado === est) { iguales++; continue; }
+        cambios.push({k:'estado', id:p.id, nombre:p.nombre, estado:est, inc:true, desc:`${EST[p.estado].n} → ${EST[est].n}`, pill:`<span class="pill ${est}">${EST[est].n}</span>`});
+      } else {
+        const seccion = SECC[v.seccion] ? v.seccion : 'alimentos';
+        const categoria = CATS[seccion].includes(v.categoria) ? v.categoria : CATS[seccion][CATS[seccion].length-1];
+        cambios.push({k:'nuevo', nombre, estado:est, seccion, categoria, inc:true, desc:`${categoria} · se guardará en ${M.lugar}`, pill:`<span class="pill ${est}">${EST[est].n}</span>`});
+      }
+    }
+    for (const n of (Array.isArray(r?.noVistos) ? r.noVistos : [])) {
+      const p = porNombre(n); if (!p || p.estado === 'nohay' || (p.lugar||'Otro') !== M.lugar || cambios.some(c => c.id === p.id)) continue;
+      cambios.push({k:'novisto', id:p.id, nombre:p.nombre, inc:false, desc:'¿Se acabó? Pasará a la lista de compras.', pill:`<span class="pill nohay">Se acabó</span>`});
+    }
+    for (const m of (Array.isArray(r?.malEstado) ? r.malEstado : [])) {
+      const p = porNombre(m.nombre); if (!p) continue;
+      cambios.push({k:'mal', id:p.id, nombre:p.nombre, inc:false, desc: esc(m.nota || 'Se ve en mal estado'), pill:`<span class="pill nohay">Botar</span>`});
+    }
+    M.cambios = cambios; M.iguales = iguales; M.paso = 'revisar'; pintarCocina();
+  } catch (e) {
+    if (M.tipo !== 'cocina' || e?.code === 'cancelled') return;
+    M.paso = 'foto'; pintarCocina();
+    toast(mensajeIA(e, 'No pude reconocer los productos. Prueba con una foto más clara.'));
+  }
+}
+async function aplicarCocina(){
+  const sel = M.cambios.filter(c => c.inc);
+  if (!sel.length) { toast('No marcaste ningún cambio.'); return; }
+  const btn = $('#cAplicarBtn'); if (btn) { btn.disabled = true; btn.textContent = 'Aplicando…'; }
+  const lugar = M.lugar, base = {por:quien(), actualizado:Date.now()};
+  const ok = await guardar(async () => {
+    for (const c of sel) {
+      if (c.k === 'nuevo') {
+        const vence = c.seccion === 'alimentos' && VIDA[c.categoria] ? sumarDias(iso(hoy()), VIDA[c.categoria]) : '';
+        await colec('productos').add({nombre:c.nombre, seccion:c.seccion, categoria:c.categoria, lugar, estado:c.estado, vence, venceAprox:!!vence, enLista:false, carrito:false, noComprar:false, ...base});
+      } else if (c.k === 'estado') await S.db.doc('productos/'+c.id).update({estado:c.estado, noComprar:false, ...base});
+      else if (c.k === 'novisto') await S.db.doc('productos/'+c.id).update({estado:'nohay', noComprar:false, ...base});
+      else if (c.k === 'mal') {
+        const p = byId(c.id);
+        await colec('mermas').add({fecha: iso(hoy()), nombre: c.nombre, productoId: c.id, valor: p?.ultimoPrecio || 0, motivo:'Se dañó', por: quien(), ts: Date.now()});
+        await S.db.doc('productos/'+c.id).update({estado:'nohay', vence:'', venceAprox:false, noComprar:false, ...base});
+      }
+    }
+    registrar(`actualizó ${lugar} con una foto (${sel.length} cambio${sel.length===1?'':'s'})`);
+  }, `Listo: ${sel.length} cambio${sel.length===1?'':'s'} en ${lugar}.`);
+  if (ok) cerrarModal(); else if (btn) { btn.disabled = false; btn.textContent = 'Aplicar cambios'; }
+}
+function mensajeIA(e, base){
+  const c = e?.code;
+  if (c === 'not_granted' || c === 'sampling_disabled') return 'Para usar la inteligencia artificial hay que permitirlo cuando Claude lo pregunte.';
+  if (c === 'rate_limited') return 'Se alcanzó el límite de uso por ahora. Intenta más tarde.';
+  if (c === 'image_rejected') return 'Esa imagen no sirve: prueba con otra foto (JPG o PNG).';
+  if (c === 'images_unavailable') { S.imgs = null; render(); return 'Esta cuenta no permite leer fotos. Puedes registrar a mano.'; }
+  return base;
+}
+
+/* Recetas */
+function modalReceta(){
+  abrirModal(`${cab('Nueva receta de la casa')}
+    <div class="sheet-b">
+      <label class="fld"><span>Nombre</span><input id="rNombre" placeholder="Ej: Arroz con pollo"></label>
+      <label class="fld"><span>Ingredientes principales</span><textarea id="rIng" placeholder="Uno por línea o separados por comas: arroz, pollo, zanahoria, arveja"></textarea><small class="hint">No hace falta poner sal, aceite ni agua.</small></label>
+      <label class="fld"><span>Preparación <em>(opcional)</em></span><textarea id="rPasos" placeholder="Un paso por línea"></textarea></label>
+    </div>
+    <footer class="sheet-f"><span class="sp"></span><button class="btn ghost" data-a="cerrar">Cancelar</button><button class="btn" data-a="rGuardar">Guardar receta</button></footer>`);
+}
+async function guardarReceta(){
+  const nombre = $('#rNombre').value.trim(), ing = $('#rIng').value.split(/[\n,]/).map(s => s.trim()).filter(Boolean);
+  if (!nombre || !ing.length) { toast('Escribe el nombre y al menos un ingrediente.'); return; }
+  const pasos = $('#rPasos').value.split('\n').map(s => s.trim()).filter(Boolean);
+  const ok = await guardar(async () => { await colec('recetas').add({nombre, ingredientes: ing, pasos, origen:'casa', por: quien(), creado: Date.now()}); registrar(`guardó la receta ${nombre}`); }, 'Receta guardada.');
+  if (ok) cerrarModal();
+}
+async function sugerirRecetas(){
+  const disp = S.productos.filter(p => p.seccion === 'alimentos' && p.estado !== 'nohay');
+  if (!disp.length) return;
+  const al = alertas();
+  const urg = al.vencidos.concat(al.semana).map(x => `${x.p.nombre} (${x.d < 0 ? 'vencido, solo si aún sirve' : x.d === 0 ? 'vence hoy' : `vence en ${x.d} días`})`);
+  const pref = ($('#iaPref')?.value || '').trim(); S.ia.pref = pref;
+  const ctl = new AbortController(); S.ia.ctl = ctl;
+  S.ia.estado = 'cargando'; S.ia.err = ''; render();
+  const prompt = `Sugiere 3 recetas caseras, sencillas y de cocina colombiana o cotidiana, usando principalmente alimentos que hay en la casa.
+Úsalos primero (se vencen pronto): ${urg.length ? urg.join('; ') : 'ninguno urgente'}.
+Disponibles en la casa: ${disp.map(p => p.nombre + (p.estado === 'poco' ? ' (queda poco)' : '')).join(', ')}.
+Supón que siempre hay sal, aceite, agua y azúcar. ${pref ? 'Petición de la familia: ' + pref + '.' : ''}
+Responde SOLO un arreglo JSON de 3 objetos con esta forma:
+[{"nombre": string, "tiempo": "30 min", "porciones": number, "usa": [ingredientes de la lista de disponibles, con el nombre como aparece], "falta": [máximo 3 ingredientes que no están en la casa], "pasos": [entre 4 y 7 pasos cortos], "porque": "una frase corta sobre qué aprovecha"}]`;
+  try {
+    const r = await S.sample.json(prompt, {signal: ctl.signal, cache: false});
+    S.ia.recetas = (Array.isArray(r) ? r : []).filter(x => x && x.nombre).slice(0, 3).map(x => ({nombre:String(x.nombre), tiempo:x.tiempo?String(x.tiempo):'', porciones:x.porciones||'', usa:(x.usa||[]).map(String), falta:(x.falta||[]).map(String), pasos:(x.pasos||[]).map(String), porque:x.porque?String(x.porque):''}));
+    if (!S.ia.recetas.length) S.ia.err = 'No llegaron recetas. Intenta otra vez.';
+  } catch (e) {
+    if (e?.code !== 'cancelled') S.ia.err = mensajeIA(e, 'No pude generar ideas ahora. Intenta de nuevo en un momento.');
+  }
+  S.ia.estado = 'idle'; render();
+}
+async function faltantesALista(src, i){
+  const r = src === 'ia' ? S.ia.recetas[i] : S.recetas[i]; if (!r) return;
+  const ings = src === 'ia' ? [...(r.usa||[]), ...(r.falta||[])] : (r.ingredientes||[]);
+  const faltan = ings.filter(x => !tieneIngrediente(x));
+  if (!faltan.length) return;
+  await guardar(async () => {
+    for (const f of faltan) {
+      const p = porNombre(f);
+      if (p) await S.db.doc('productos/'+p.id).update({enLista:true, noComprar:false});
+      else if (!S.lista.some(l => norm(l.nombre) === norm(f))) await colec('lista').add({nombre: f, seccion:'alimentos', carrito:false, por: quien(), ts: Date.now()});
+    }
+  }, `${faltan.length} ingrediente${faltan.length===1?'':'s'} a la lista.`);
+}
+
+/* ---------- Lista ---------- */
+async function agregarALista(){
+  const inp = $('#lNuevo'), n = inp.value.trim(); if (!n) return;
+  const p = porNombre(n), secc = $('#lSecc').value;
+  const ok = await guardar(async () => {
+    if (p) await S.db.doc('productos/'+p.id).update({enLista:true, noComprar:false});
+    else if (!S.lista.some(l => norm(l.nombre) === norm(n))) await colec('lista').add({nombre:n, seccion:secc, carrito:false, por:quien(), ts:Date.now()});
+  });
+  if (ok) { const el = $('#lNuevo'); if (el) { el.value = ''; el.focus(); } toast(`${n} quedó en la lista.`); }
+}
+async function terminarMercado(){
+  const sel = listaItems().filter(i => i.carrito); if (!sel.length) return;
+  const hoyS = iso(hoy());
+  const ok = await guardar(async () => {
+    for (const i of sel) {
+      if (i.tipo === 'p') {
+        const p = byId(i.id); const upd = {estado:'hay', carrito:false, enLista:false, noComprar:false, por:quien(), actualizado:Date.now()};
+        if (p && p.seccion === 'alimentos' && VIDA[p.categoria] && p.categoria !== 'Congelados') { upd.vence = sumarDias(hoyS, VIDA[p.categoria]); upd.venceAprox = true; }
+        else if (p && p.estado === 'nohay') upd.vence = '';
+        await S.db.doc('productos/'+i.id).update(upd);
+      } else {
+        const l = S.lista.find(x => x.id === i.id); const secc = l?.seccion || 'alimentos', cat = CATS[secc][CATS[secc].length-1];
+        await colec('productos').add({nombre:i.nombre, seccion:secc, categoria:cat, lugar:lugarSugerido(secc, cat), estado:'hay', vence:'', venceAprox:false, enLista:false, carrito:false, noComprar:false, por:quien(), actualizado:Date.now()});
+        await S.db.doc('lista/'+i.id).delete();
+      }
+    }
+    registrar(`terminó el mercado: ${sel.length} producto${sel.length===1?'':'s'} de nuevo en la despensa`);
+  }, `${sel.length} productos quedaron como Hay.`);
+  if (ok) S.imgs ? modalFactura() : modalGasto({tipo:'quincena'});
+}
+
+/* ---------- Carga masiva ---------- */
+function clasificar(nombre, lugar){
+  const n = norm(nombre), w = n.split(' ')[0];
+  const c = CAT_ITEMS.find(i => norm(i.nombre) === n)
+    || CAT_ITEMS.find(i => norm(i.nombre).startsWith(n) || n.includes(norm(i.nombre)))
+    || (w.length > 3 && CAT_ITEMS.find(i => norm(i.nombre).split(' ')[0] === w));
+  if (c) return {seccion:c.seccion, categoria:c.categoria, lugar:c.lugar, conocido:true};
+  const l = lugar || 'Alacena';
+  const por = {'Baño':['aseo','Aseo personal'], 'Lavadero':['aseo','Limpieza de la casa'], 'Bodega':['hogar','Otros del hogar'], 'Congelador':['alimentos','Congelados']}[l] || ['alimentos','Otros alimentos'];
+  return {seccion:por[0], categoria:por[1], lugar:l, conocido:false};
+}
+function parsearLista(txt){
+  const out = [], vistos = new Set();
+  const rxLug = new RegExp('\\b(en (la |el )?)?(' + LUGARES.map(norm).join('|') + ')\\b', 'g');
+  for (const raw of String(txt).split(/\r?\n/)) {
+    let l = raw.replace(/^\s*([-*•·]|\d+[.)])\s+/, '').trim(); if (!l) continue;
+    const n = norm(l);
+    const estado = /\b(no hay|agotad[oa]s?|se acabo|acabad[oa]|falta)\b/.test(n) ? 'nohay' : /\b(poco|poca|pocos|pocas|casi|bajo)\b/.test(n) ? 'poco' : 'hay';
+    const lugar = LUGARES.find(x => new RegExp('\\b' + norm(x) + '\\b').test(n));
+    let nombre = norm(l.split(/\t|;|\||,| - /)[0])
+      .replace(/^\d+([.,]\d+)?\s*(kg|kilos?|g|gr|gramos|lb|libras?|l|lt|litros?|ml|und|unidades?|paquetes?|bolsas?|cajas?|latas?|x)?\.?\s+(de\s+)?/, '')
+      .replace(/\b(no hay|agotad[oa]s?|se acabo|queda poco|poco|poca|hay)\b/g, '').replace(rxLug, '')
+      .replace(/\s{2,}/g, ' ').replace(/^[\s,;:-]+|[\s,;:-]+$/g, '').trim();
+    if (!nombre || vistos.has(nombre)) continue; vistos.add(nombre);
+    const cat = CAT_ITEMS.find(i => norm(i.nombre) === nombre);
+    const bonito = cat ? cat.nombre : nombre.charAt(0).toUpperCase() + nombre.slice(1);
+    const cl = clasificar(bonito, lugar);
+    out.push({nombre: bonito, estado, lugar: lugar || cl.lugar, lugarFijo: !!lugar, seccion: cl.seccion, categoria: cl.categoria, conocido: cl.conocido, inc: true});
+  }
+  return out;
+}
+function modalCarga(){ M = {tipo:'carga', paso:'menu', lugar:'Nevera', sel:{}, extra:[], filas:[], texto:''}; pintarCarga(); }
+function pintarCarga(){
+  const prev = document.querySelector('#modal .sheet-b');
+  const st = prev && M._vista === M.paso + M.lugar ? prev.scrollTop : 0; M._vista = M.paso + M.lugar;
+  let html;
+  if (M.paso === 'menu') {
+    html = `${cab('Carga masiva del inventario')}
+      <div class="sheet-b">
+        <p class="muted">Elige cómo quieres cargar lo que hay en la casa. Puedes combinar: por ejemplo, el catálogo para la alacena y fotos para la nevera.</p>
+        <div class="metodos">
+          <button class="metodo" data-a="cPaso" data-p="catalogo">${ico('despensa')}<b>Marcar en el catálogo</b><small>Unos 140 productos típicos de la canasta, ordenados por lugar. Solo tocas Hay, Poco o No hay. Es lo más rápido.</small></button>
+          <button class="metodo" data-a="cPaso" data-p="pegar">${ico('factura')}<b>Pegar una lista</b><small>Desde Excel, WhatsApp o una nota. Un producto por línea.</small></button>
+          ${S.imgs ? `<button class="metodo" data-a="fotoCocina">${ico('camara')}<b>Con fotos</b><small>Abre la nevera o la alacena y toma fotos. La IA reconoce los productos.</small></button>` : ''}
+        </div>
+        <div class="tip">${ico('bombillo')}<span>A los perecederos (lácteos, carnes, verduras, pan) les pongo una fecha de vencimiento aproximada. Después corrige la de los que estén por vencerse.</span></div>
+      </div>`;
+  } else if (M.paso === 'catalogo') {
+    const items = CAT_ITEMS.filter(i => i.lugar === M.lugar).concat(M.extra.filter(i => i.lugar === M.lugar));
+    const cats = [...new Set(items.map(i => i.categoria))];
+    const nSel = Object.keys(M.sel).length;
+    const cuenta = l => Object.values(M.sel).filter(s => s.lugar === l).length;
+    const sig = LUGARES_CARGA[LUGARES_CARGA.indexOf(M.lugar) + 1];
+    html = `${cab('Marca lo que hay en casa')}
+      <div class="sheet-b">
+        <p class="muted small">Marca solo lo que usan. Toca otra vez para desmarcar. Lo que marques como <b>No hay</b> queda directo en la lista de compras.</p>
+        <div class="chips">${LUGARES_CARGA.map(l => `<button class="chip" data-a="kLugar" data-l="${l}" aria-pressed="${M.lugar===l}">${l}${cuenta(l) ? `<span class="c num">${cuenta(l)}</span>` : ''}</button>`).join('')}</div>
+        <div class="addrow"><input id="kOtro" placeholder="¿Falta algo en ${esc(M.lugar)}? Escríbelo" aria-label="Otro producto"><button class="btn sm ghost" data-a="kOtro">${ico('mas')} Agregar</button></div>
+        ${cats.map(c => `<div class="fld"><span class="sec-t">${esc(c)}</span><ul class="items">${items.filter(i => i.categoria === c).map(i => {
+          const ya = porNombre(i.nombre), s = M.sel[i.nombre];
+          return `<li class="item"><span class="item-name"><b>${esc(i.nombre)}</b></span>${ya && !s ? `<span class="pill neutral">Ya registrado</span>` :
+            `<div class="estados" role="group" aria-label="${esc(i.nombre)}">${['hay','poco','nohay'].map(e => `<button class="e-${e}" data-a="kSel" data-n="${esc(i.nombre)}" data-e="${e}" aria-pressed="${s?.estado===e}"><i></i><span>${e==='nohay'?'No hay':e==='poco'?'Poco':'Hay'}</span></button>`).join('')}</div>`}</li>`;
+        }).join('')}</ul></div>`).join('')}
+      </div>
+      <footer class="sheet-f"><button class="btn ghost" data-a="cPaso" data-p="menu">Atrás</button>${sig ? `<button class="btn ghost" data-a="kLugar" data-l="${sig}">Siguiente: ${sig} →</button>` : ''}<span class="sp"></span><button class="btn" data-a="kGuardar" id="cgGuardar" ${nSel?'':'disabled'}>Guardar ${nSel || ''}</button></footer>`;
+  } else if (M.paso === 'pegar') {
+    html = `${cab('Pegar una lista')}
+      <div class="sheet-b">
+        <p class="muted">Un producto por línea. Puedes copiar una columna de Excel, un mensaje de WhatsApp o una nota del celular.</p>
+        <label class="fld"><span>Tu lista</span><textarea id="pgTexto" rows="10" placeholder="Arroz&#10;Leche, nevera&#10;Papel higiénico; no hay&#10;Detergente - poco&#10;2 libras de lentejas">${esc(M.texto)}</textarea></label>
+        <div class="tip">${ico('bombillo')}<span>En la misma línea puedes escribir el lugar (nevera, alacena, baño, lavadero…) y el estado (poco, no hay). Si no escribes nada, queda como <b>Hay</b> y yo sugiero el lugar.</span></div>
+      </div>
+      <footer class="sheet-f"><button class="btn ghost" data-a="cPaso" data-p="menu">Atrás</button><span class="sp"></span><button class="btn" data-a="cRevisar">Revisar lista</button></footer>`;
+  } else {
+    const n = M.filas.filter(f => f.inc).length, dudosos = M.filas.filter(f => !f.conocido).length;
+    html = `${cab(`Revisa ${M.filas.length} productos`)}
+      <div class="sheet-b">
+        <p class="muted small">Corrige el tipo, el lugar o el estado si hace falta. Desmarca lo que no quieras guardar.</p>
+        ${S.sample && dudosos ? `<div class="banner"><p>No reconocí ${dudosos} producto${dudosos===1?'':'s'}. La IA puede ordenarlos por tipo y lugar.</p><button class="btn sm" data-a="cgIA" ${M.iaCargando?'disabled':''}>${ico('ia')} ${M.iaCargando ? 'Organizando…' : 'Organizar con IA'}</button></div>` : ''}
+        <ul class="rev">${M.filas.map((f,i) => `<li class="${f.inc?'':'off'}">
+          <input type="checkbox" data-c="cgInc" data-i="${i}" ${f.inc?'checked':''} aria-label="Guardar ${esc(f.nombre)}">
+          <div class="fields f4">
+            <input id="cgN_${i}" value="${esc(f.nombre)}" aria-label="Nombre">
+            <select id="cgS_${i}" aria-label="Tipo">${Object.keys(SECC).map(k => `<option value="${k}" ${f.seccion===k?'selected':''}>${k==='alimentos'?'Alimento':k==='aseo'?'Aseo':'Mantenim.'}</option>`).join('')}</select>
+            <select id="cgL_${i}" aria-label="Lugar">${opts(LUGARES, f.lugar)}</select>
+            <select id="cgE_${i}" aria-label="Estado">${Object.entries(EST).map(([k,v]) => `<option value="${k}" ${f.estado===k?'selected':''}>${k==='hay'?'Hay':k==='poco'?'Poco':'No hay'}</option>`).join('')}</select>
+          </div>
+          <small>${esc(f.categoria)}${porNombre(f.nombre) ? ' · ya existe: se actualiza' : ''}${f.conocido ? '' : ' · revisa el tipo'}</small>
+        </li>`).join('')}</ul>
+      </div>
+      <footer class="sheet-f"><button class="btn ghost" data-a="cPaso" data-p="pegar">Atrás</button><span class="sp"></span><button class="btn" data-a="cgGuardar" id="cgGuardar" ${n?'':'disabled'}>Guardar ${n}</button></footer>`;
+  }
+  abrirModal(html, false);
+  const b = document.querySelector('#modal .sheet-b'); if (b && st) b.scrollTop = st;
+}
+function leerFilas(){
+  M.filas.forEach((f, i) => {
+    const nm = document.getElementById('cgN_'+i); if (!nm) return;
+    f.nombre = nm.value.trim(); f.lugar = document.getElementById('cgL_'+i).value; f.estado = document.getElementById('cgE_'+i).value;
+    const s = document.getElementById('cgS_'+i).value;
+    if (s !== f.seccion) { f.seccion = s; const cl = clasificar(f.nombre, f.lugar); f.categoria = cl.seccion === s ? cl.categoria : CATS[s][CATS[s].length-1]; }
+  });
+}
+async function organizarIA(){
+  leerFilas(); M.iaCargando = true; pintarCarga();
+  const prompt = `Organiza esta lista de productos de una casa en Colombia para un inventario doméstico.
+Responde SOLO un arreglo JSON con un objeto por producto, en el mismo orden de la lista:
+[{"nombre": "nombre corto y claro en español, con mayúscula inicial", "seccion": "alimentos"|"aseo"|"hogar", "categoria": string, "lugar": string}]
+- seccion "alimentos" = comida y bebidas; "aseo" = aseo personal, limpieza, lavandería, papel; "hogar" = mantenimiento y dotación.
+- categoria debe ser exactamente una de: alimentos: ${CATS.alimentos.join(' | ')}; aseo: ${CATS.aseo.join(' | ')}; hogar: ${CATS.hogar.join(' | ')}
+- lugar debe ser uno de: ${LUGARES.join(', ')} (donde normalmente se guarda en una casa colombiana).
+Lista: ${JSON.stringify(M.filas.map(f => f.nombre))}`;
+  try {
+    const r = await S.sample.json(prompt);
+    if (M.tipo !== 'carga') return;
+    (Array.isArray(r) ? r : []).forEach((x, i) => {
+      const f = M.filas[i]; if (!f || !x) return;
+      if (x.nombre) f.nombre = String(x.nombre).trim() || f.nombre;
+      if (SECC[x.seccion]) { f.seccion = x.seccion; f.categoria = CATS[x.seccion].includes(x.categoria) ? x.categoria : CATS[x.seccion][CATS[x.seccion].length-1]; }
+      if (LUGARES.includes(x.lugar) && !f.lugarFijo) f.lugar = x.lugar;
+      f.conocido = true;
+    });
+    toast('Lista organizada. Revisa y guarda.');
+  } catch (e) { toast(mensajeIA(e, 'No pude organizar la lista. Puedes corregirla a mano y guardar.')); }
+  M.iaCargando = false; if (M.tipo === 'carga') pintarCarga();
+}
+async function guardarMasivo(items){
+  const btn = $('#cgGuardar'); let n = 0;
+  if (btn) btn.disabled = true;
+  const hoyS = iso(hoy());
+  const ok = await guardar(async () => {
+    for (const it of items) {
+      n++; if (btn) btn.textContent = `Guardando ${n} de ${items.length}…`;
+      const p = porNombre(it.nombre), base = {por:quien(), actualizado:Date.now()};
+      if (p) { await S.db.doc('productos/'+p.id).update({estado:it.estado, lugar:it.lugar, noComprar:false, ...base}); continue; }
+      const vence = it.estado !== 'nohay' && it.seccion === 'alimentos' && VIDA[it.categoria] && it.categoria !== 'Congelados' ? sumarDias(hoyS, VIDA[it.categoria]) : '';
+      await colec('productos').add({nombre:it.nombre, seccion:it.seccion, categoria:it.categoria, lugar:it.lugar, estado:it.estado, vence, venceAprox:!!vence, enLista:false, carrito:false, noComprar:false, ...base});
+    }
+    registrar(`cargó ${items.length} producto${items.length===1?'':'s'} al inventario`);
+  }, `Listo: ${items.length} producto${items.length===1?'':'s'} en la despensa.`);
+  if (!ok && btn) { btn.disabled = false; btn.textContent = 'Guardar'; }
+  return ok;
+}
+
+/* ---------- Ejemplos ---------- */
+async function quitarEjemplos(){
+  const docs = [['productos',S.productos],['compras',S.compras],['mermas',S.mermas],['recetas',S.recetas]].flatMap(([c,a]) => a.filter(x => x.ejemplo).map(x => c+'/'+x.id));
+  await guardar(async () => { for (const p of docs) await S.db.doc(p).delete(); }, 'Ejemplos quitados. Ya puedes empezar con lo de tu casa.');
+}
+
+/* ---------- Eventos ---------- */
+const ACT = {
+  tab: d => { S.tab = d.t; lsSet('tab', d.t); try { history.replaceState(null, '', '#'+d.t); } catch {} render(); window.scrollTo({top:0}); },
+  cerrar: () => cerrarModal(),
+  guia: () => modalGuia(),
+  ocultarGuia: () => { S.guiaOculta = true; lsSet('guia-oculta','1'); render(); toast('Puedes volver a verla con el botón "?" de arriba.'); },
+  quien: () => modalQuien(),
+  soy: d => fijarQuien(d.n),
+  soyNuevo: () => { const v = $('#qNombre').value.trim(); if (v) fijarQuien(v); else if (S.quien) cerrarModal(); else toast('Escribe tu nombre o elige uno.'); },
+  est: d => {
+    const p = byId(d.id); if (!p || p.estado === d.e) return;
+    p.estado = d.e; p.noComprar = false; render();
+    actualizar('productos/'+d.id, {estado:d.e, noComprar:false, por:quien(), actualizado:Date.now(), ...(d.e==='nohay'?{vence:'', venceAprox:false}:{})});
+    if (d.e !== 'hay') registrar(`marcó ${p.nombre} como "${EST[d.e].n}"`);
+  },
+  editar: d => modalProducto(d.id),
+  nuevo: () => modalProducto(null, S.fSecc !== 'todas' ? {seccion:S.fSecc, categoria:CATS[S.fSecc][0], lugar:S.fLugar!=='todos'?S.fLugar:lugarSugerido(S.fSecc, CATS[S.fSecc][0])} : (S.fLugar!=='todos'?{lugar:S.fLugar}:{})),
+  pSecc: d => { M.seccion = d.s; document.querySelectorAll('#pSecc button').forEach(b => b.setAttribute('aria-pressed', b.dataset.s === d.s)); $('#pCat').innerHTML = opts(CATS[d.s], CATS[d.s][0]); $('#pLugar').value = lugarSugerido(d.s, CATS[d.s][0]); },
+  pEst: d => { M.estado = d.e; document.querySelectorAll('#pEst button').forEach(b => b.setAttribute('aria-pressed', b.dataset.e === d.e)); },
+  venceMas: d => { $('#pVence').value = d.d ? sumarDias(iso(hoy()), +d.d) : ''; },
+  pGuardar: () => guardarProducto(),
+  pBorrar: async (d, b) => {
+    if (!M.confirmar) { M.confirmar = true; b.textContent = '¿Seguro? Toca otra vez'; return; }
+    const p = byId(M.id);
+    const ok = await guardar(() => S.db.doc('productos/'+M.id).delete(), 'Producto eliminado.');
+    if (ok) { if (p) registrar(`eliminó ${p.nombre} de la despensa`); cerrarModal(); }
+  },
+  botar: d => modalBotar(d.id),
+  bMotivo: (d) => { M.motivo = d.m; document.querySelectorAll('[data-a="bMotivo"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === d.m)); },
+  bValor: d => { $('#bValor').value = d.v; },
+  bGuardar: () => guardarBotar(),
+  fSecc: d => { S.fSecc = d.s; render(); },
+  fLugar: d => { S.fLugar = d.l; render(); },
+  fotoCocina: () => modalFotoCocina(),
+  cLugar: d => { M.lugar = d.l; pintarCocina(); },
+  cAplicar: () => aplicarCocina(),
+  factura: () => modalFactura(),
+  fTipo: d => { leerRevisionFactura(); M.tipoCompra = d.t; pintarFactura(); },
+  fGuardar: () => guardarFactura(),
+  gasto: () => modalGasto(),
+  gTipo: d => { M.tipoCompra = d.t; document.querySelectorAll('[data-a="gTipo"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === d.t)); },
+  gGuardar: () => guardarGasto(),
+  lAgregar: () => agregarALista(),
+  quitarLista: d => {
+    const [t, id] = d.k.split(':');
+    if (t === 'p') { const p = byId(id); if (p) { p.noComprar = true; p.enLista = false; render(); } actualizar('productos/'+id, {noComprar:true, enLista:false, carrito:false}); }
+    else guardar(() => S.db.doc('lista/'+id).delete());
+  },
+  terminar: () => terminarMercado(),
+  borrarCompra: async d => {
+    if (M.borrarCompra !== d.id) { M.borrarCompra = d.id; render(); return; }
+    M.borrarCompra = null; await guardar(() => S.db.doc('compras/'+d.id).delete(), 'Compra borrada.');
+  },
+  nuevaReceta: () => modalReceta(),
+  rGuardar: () => guardarReceta(),
+  borrarReceta: async d => {
+    if (M.borrarReceta !== d.id) { M.borrarReceta = d.id; render(); return; }
+    M.borrarReceta = null; await guardar(() => S.db.doc('recetas/'+d.id).delete(), 'Receta borrada.');
+  },
+  sugerir: () => sugerirRecetas(),
+  pararIA: () => S.ia.ctl?.abort(),
+  faltantes: d => faltantesALista(d.src, +d.i),
+  guardarRecetaIA: async d => {
+    const r = S.ia.recetas[+d.i]; if (!r) return;
+    const ok = await guardar(() => colec('recetas').add({nombre:r.nombre, ingredientes:[...r.usa, ...r.falta], pasos:r.pasos, tiempo:r.tiempo, porciones:r.porciones, origen:'ia', por:quien(), creado:Date.now()}), `"${r.nombre}" quedó en las recetas de la casa.`);
+    if (ok) registrar(`guardó la receta ${r.nombre}`);
+  },
+  aGuardar: async () => {
+    const presupuesto = pesos($('#aPresu').value), diasAlerta = +$('#aDias').value;
+    if (!presupuesto) { toast('Escribe el presupuesto mensual.'); return; }
+    await guardar(() => S.configExiste ? S.db.doc('config/general').update({presupuesto, diasAlerta}) : S.db.doc('config/general').set({...S.config, presupuesto, diasAlerta}), 'Ajustes guardados.');
+  },
+  quitarFamilia: async d => {
+    const fam = (S.config.familia||[]).filter(f => f !== d.n);
+    await guardar(() => S.db.doc('config/general').update({familia: fam}));
+  },
+  quitarEjemplos: () => quitarEjemplos(),
+  ocultarArranque: () => { lsSet('arranque-oculto','1'); render(); },
+  carga: () => modalCarga(),
+  cPaso: d => {
+    if (M.tipo !== 'carga') M = {tipo:'carga', lugar:'Nevera', sel:{}, extra:[], filas:[], texto:''};
+    if (M.paso === 'pegar') M.texto = $('#pgTexto')?.value || '';
+    if (M.paso === 'revisar') leerFilas();
+    M.paso = d.p; pintarCarga();
+  },
+  kLugar: d => { M.lugar = d.l; pintarCarga(); },
+  kSel: d => {
+    if (M.sel[d.n]?.estado === d.e) delete M.sel[d.n];
+    else { const it = CAT_ITEMS.find(i => i.nombre === d.n && i.lugar === M.lugar) || M.extra.find(i => i.nombre === d.n) || CAT_ITEMS.find(i => i.nombre === d.n); M.sel[d.n] = {...it, estado: d.e}; }
+    pintarCarga();
+  },
+  kOtro: () => {
+    const v = ($('#kOtro')?.value || '').trim(); if (!v) return;
+    const nombre = v.charAt(0).toUpperCase() + v.slice(1);
+    if (!M.extra.some(i => norm(i.nombre) === norm(nombre)) && !CAT_ITEMS.some(i => i.lugar === M.lugar && norm(i.nombre) === norm(nombre))) {
+      const cl = clasificar(nombre, M.lugar);
+      M.extra.push({nombre, lugar: M.lugar, seccion: cl.seccion, categoria: cl.categoria});
+    }
+    const it = M.extra.find(i => norm(i.nombre) === norm(nombre)) || CAT_ITEMS.find(i => i.lugar === M.lugar && norm(i.nombre) === norm(nombre));
+    M.sel[it.nombre] = {...it, lugar: M.lugar, estado: 'hay'};
+    pintarCarga(); setTimeout(() => $('#kOtro')?.focus(), 0);
+  },
+  kGuardar: async () => { const items = Object.values(M.sel); if (!items.length) return; if (await guardarMasivo(items)) { M.sel = {}; setTimeout(() => M.tipo === 'carga' && pintarCarga(), 300); } },
+  cRevisar: () => {
+    M.texto = $('#pgTexto').value; M.filas = parsearLista(M.texto);
+    if (!M.filas.length) { toast('Escribe o pega al menos un producto.'); return; }
+    M.paso = 'revisar'; pintarCarga();
+  },
+  cgIA: () => organizarIA(),
+  cgGuardar: async () => { leerFilas(); const items = M.filas.filter(f => f.inc && f.nombre); if (items.length && await guardarMasivo(items)) cerrarModal(); }
+};
+document.addEventListener('click', e => {
+  const m = $('#modal');
+  if (e.target === m) { cerrarModal(); return; }
+  const b = e.target.closest('[data-a]'); if (!b) return;
+  if (b.tagName === 'BUTTON') e.preventDefault();
+  ACT[b.dataset.a]?.(b.dataset, b, e);
+});
+document.addEventListener('input', e => {
+  if (e.target.dataset.i === 'q') { S.q = e.target.value; render(); }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'fFile') leerFactura(t.files);
+  else if (t.id === 'cFile') leerCocina(t.files);
+  else if (t.dataset.c === 'carrito') {
+    const [k, id] = t.dataset.k.split(':');
+    const arr = k === 'p' ? S.productos : S.lista, it = arr.find(x => x.id === id);
+    if (it) it.carrito = t.checked;
+    actualizar((k === 'p' ? 'productos/' : 'lista/') + id, {carrito: t.checked});
+    render();
+  }
+  else if (t.dataset.c === 'fInc') { leerRevisionFactura(); M.items[+t.dataset.i].inc = t.checked; pintarFactura(); }
+  else if (t.dataset.c === 'cInc') { M.cambios[+t.dataset.i].inc = t.checked; }
+  else if (t.dataset.c === 'cgInc') {
+    M.filas[+t.dataset.i].inc = t.checked; t.closest('li').classList.toggle('off', !t.checked);
+    const b = $('#cgGuardar'), n = M.filas.filter(f => f.inc).length; if (b) { b.textContent = `Guardar ${n}`; b.disabled = !n; }
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#modal').hidden) cerrarModal();
+  if (e.key === 'Enter' && e.target.id === 'lNuevo') { e.preventDefault(); agregarALista(); }
+  if (e.key === 'Enter' && e.target.id === 'qNombre') { e.preventDefault(); ACT.soyNuevo(); }
+  if (e.key === 'Enter' && e.target.id === 'kOtro') { e.preventDefault(); ACT.kOtro(); }
+});
+
+let tt;
+function toast(t){ const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(tt); tt = setTimeout(() => el.hidden = true, 3200); }
+
+/* ---------- Supabase: almacén de documentos con la misma forma que usa la app ---------- */
+let sb = null;
+function crearDB(sb){
+  const cache = {}, cargas = {}, subs = new Set();
+  const nuevoId = () => (crypto.randomUUID ? crypto.randomUUID().replace(/-/g,'').slice(0,20) : Date.now().toString(36) + Math.random().toString(36).slice(2,10));
+  const mapa = c => cache[c] || (cache[c] = new Map());
+  const avisar = c => subs.forEach(s => s.col === c && s.fn());
+  const poner = (c, id, data) => { if (data == null) mapa(c).delete(id); else mapa(c).set(id, data); avisar(c); };
+  const fallo = e => ({code: /42501|permission|policy|row-level/i.test(`${e.code} ${e.message}`) ? 'invalid_argument' : 'unavailable', message: e.message});
+  function cargar(c){
+    return cargas[c] || (cargas[c] = (async () => {
+      for (let desde = 0; ; desde += 1000) {
+        const {data, error} = await sb.from('docs').select('id,data').eq('coleccion', c).range(desde, desde + 999);
+        if (error) { delete cargas[c]; throw fallo(error); }
+        for (const r of data) mapa(c).set(r.id, r.data);
+        if (data.length < 1000) break;
+      }
+    })());
+  }
+  sb.channel('docs-cambios').on('postgres_changes', {event:'*', schema:'public', table:'docs'}, p => {
+    if (p.eventType === 'DELETE') { if (p.old?.coleccion) poner(p.old.coleccion, p.old.id, null); }
+    else if (p.new?.coleccion) poner(p.new.coleccion, p.new.id, p.new.data);
+  }).subscribe();
+  const snapDoc = (id, data) => ({id, exists: data != null, data: () => data == null ? undefined : data, metadata:{fromCache:false, hasPendingWrites:false}});
+  const cmp = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+  const OPS = {'==':(a,b) => a === b, '!=':(a,b) => a !== b, '<':(a,b) => a < b, '<=':(a,b) => a <= b, '>':(a,b) => a > b, '>=':(a,b) => a >= b};
+  function docRef(c, id){
+    return {
+      id, path: c + '/' + id,
+      get: async () => { await cargar(c); return snapDoc(id, mapa(c).get(id)); },
+      onSnapshot(next, err){ const s = {col:c, fn:() => next(snapDoc(id, mapa(c).get(id)))}; subs.add(s); cargar(c).then(s.fn, e => err && err(e)); return () => subs.delete(s); },
+      async set(data){
+        const prev = mapa(c).get(id); poner(c, id, data);
+        const {error} = await sb.from('docs').upsert({coleccion:c, id, data});
+        if (error) { poner(c, id, prev); throw fallo(error); }
+      },
+      async update(cambios){
+        const prev = mapa(c).get(id); if (prev !== undefined) poner(c, id, {...prev, ...cambios});
+        const {error} = await sb.rpc('fusionar_doc', {p_coleccion:c, p_id:id, p_cambios:cambios});
+        if (error) { if (prev !== undefined) poner(c, id, prev); throw fallo(error); }
+      },
+      async delete(){
+        const prev = mapa(c).get(id); poner(c, id, null);
+        const {error} = await sb.from('docs').delete().match({coleccion:c, id});
+        if (error) { poner(c, id, prev); throw fallo(error); }
+      }
+    };
+  }
+  function query(c, q = {w:[], o:null, l:0}){
+    const run = () => {
+      let xs = [...mapa(c)].map(([id, data]) => ({id, data})).filter(x => q.w.every(([f, op, v]) => OPS[op](x.data[f], v)));
+      if (q.o) xs.sort((a, b) => { const r = cmp(a.data[q.o[0]] ?? '', b.data[q.o[0]] ?? ''); return q.o[1] === 'desc' ? -r : r; });
+      else xs.sort((a, b) => cmp(a.id, b.id));
+      if (q.l) xs = xs.slice(0, q.l);
+      const docs = xs.map(x => snapDoc(x.id, x.data));
+      return {docs, size: docs.length, empty: !docs.length, docChanges: () => [], metadata:{fromCache:false, hasPendingWrites:false}};
+    };
+    return {
+      where: (f, op, v) => query(c, {...q, w:[...q.w, [f, op, v]]}),
+      orderBy: (f, dir = 'asc') => query(c, {...q, o:[f, dir]}),
+      limit: n => query(c, {...q, l:n}),
+      get: async () => { await cargar(c); return run(); },
+      onSnapshot(next, err){ const s = {col:c, fn:() => next(run())}; subs.add(s); cargar(c).then(s.fn, e => err && err(e)); return () => subs.delete(s); },
+      doc: id => docRef(c, id || nuevoId()),
+      add: async data => { const r = docRef(c, nuevoId()); await r.set(data); return r; }
+    };
+  }
+  return {collection: c => query(c), doc: path => { const [c, id] = path.split('/'); return docRef(c, id); }};
+}
+
+/* ---------- Pantallas de acceso ---------- */
+function vAcceso(){
+  if (S.pantalla === 'config') return `<div class="login"><section class="card"><h2>Falta conectar la base de datos</h2><p class="muted">Edita el archivo <b>config.js</b> con la dirección y la clave pública de tu proyecto de Supabase. Los pasos están en el README.</p></section></div>`;
+  if (S.pantalla === 'cargando') return `<div class="skel"></div><div class="skel"></div>`;
+  if (S.pantalla === 'noautorizado') return `<div class="login"><section class="card">
+      <h2>Tu correo aún no tiene acceso</h2>
+      <p class="muted">Entraste como <b>${esc(S.email)}</b>. Pide a alguien de la casa que agregue tu correo en <b>Gastos → Ajustes → Correos con acceso</b> y vuelve a abrir la app.</p>
+      <div class="btns"><button class="btn" data-a="recargar">Ya me agregaron</button><button class="btn ghost" data-a="salir">Usar otro correo</button></div>
+    </section></div>`;
+  return `<div class="login"><section class="card">
+      <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true" style="width:40px;height:40px"><rect x="7" y="10" width="18" height="19" rx="5" fill="var(--accent)"/><rect x="9" y="4" width="14" height="6" rx="2" fill="var(--sun)"/><path d="M11 18h10M11 22h7" stroke="var(--accent-ink)" stroke-width="2" stroke-linecap="round"/></svg></div>
+      <h1>Despensa de la Casa</h1>
+      <p class="muted">Inventario, alertas de vencimiento, lista del mercado y presupuesto de la familia.</p>
+      ${S.loginEnviado ? `
+        <div class="banner"><p>Te enviamos un correo a <b>${esc(S.loginEnviado)}</b>. Abre el enlace desde este mismo dispositivo, o escribe aquí el código de 6 dígitos.</p></div>
+        <label class="fld"><span>Código</span><input id="loginCodigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></label>
+        <div class="btns"><button class="btn" data-a="verificar">Entrar</button><button class="btn ghost" data-a="otroCorreo">Usar otro correo</button></div>`
+      : `
+        <label class="fld"><span>Tu correo</span><input id="loginEmail" type="email" autocomplete="email" placeholder="nombre@correo.com"></label>
+        <div class="btns"><button class="btn" data-a="login">Enviarme el acceso</button></div>
+        <small class="hint">No necesitas contraseña: te llega un enlace o un código al correo. Solo entran los correos autorizados por la familia.</small>`}
+    </section></div>`;
+}
+const ACCESO = {
+  login: async () => {
+    const email = ($('#loginEmail')?.value || '').trim().toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Escribe un correo válido.'); return; }
+    const {error} = await sb.auth.signInWithOtp({email, options:{emailRedirectTo: location.origin + location.pathname}});
+    if (error) { toast(/rate|seconds/i.test(error.message) ? 'Espera un minuto antes de pedir otro correo.' : 'No se pudo enviar el correo. Intenta de nuevo.'); return; }
+    S.loginEnviado = email; render();
+  },
+  verificar: async () => {
+    const token = ($('#loginCodigo')?.value || '').trim();
+    if (!/^\d{6}$/.test(token)) { toast('Escribe el código de 6 dígitos.'); return; }
+    const {error} = await sb.auth.verifyOtp({email: S.loginEnviado, token, type:'email'});
+    if (error) toast('El código no es válido o ya venció. Pide otro.');
+  },
+  otroCorreo: () => { S.loginEnviado = ''; render(); },
+  salir: async () => { await sb.auth.signOut(); location.reload(); },
+  recargar: () => location.reload(),
+  agregarMiembro: async () => {
+    const email = ($('#aMiembro')?.value || '').trim().toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Escribe un correo válido.'); return; }
+    const {error} = await sb.from('miembros').upsert({email, agregado_por: S.email});
+    if (error) { toast('No se pudo agregar el correo.'); return; }
+    S.miembros = [...new Set([...S.miembros, email])]; render();
+    toast(`Listo. Envíale el enlace de la app a ${email}.`);
+  },
+  quitarMiembro: async d => {
+    if (d.e === S.email) { toast('No puedes quitar tu propio correo.'); return; }
+    const {error} = await sb.from('miembros').delete().eq('email', d.e);
+    if (error) { toast('No se pudo quitar el correo.'); return; }
+    S.miembros = S.miembros.filter(m => m !== d.e); render();
+  }
+};
+Object.assign(ACT, ACCESO);
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (e.target.id === 'loginEmail') { e.preventDefault(); ACCESO.login(); }
+  if (e.target.id === 'loginCodigo') { e.preventDefault(); ACCESO.verificar(); }
+  if (e.target.id === 'aMiembro') { e.preventDefault(); ACCESO.agregarMiembro(); }
+});
+
+/* ---------- Arranque ---------- */
+S.pantalla = 'cargando';
+render();
+async function arrancar(session){
+  if (S.db) return;
+  S.email = (session.user.email || '').toLowerCase();
+  const {data, error} = await sb.from('miembros').select('email');
+  if (error || !data || !data.length) { S.pantalla = 'noautorizado'; render(); return; }
+  S.miembros = data.map(r => r.email);
+  S.pantalla = 'app';
+  const db = crearDB(sb);
+  S.db = db;
+  const sub = (key, q) => q.onSnapshot(snap => {
+    S[key] = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    S.loaded[key] = true; pedirRender();
+  }, () => toast('Se perdió la conexión con los datos. Recarga la página.'));
+  sub('productos', db.collection('productos'));
+  sub('lista', db.collection('lista'));
+  sub('compras', db.collection('compras').orderBy('fecha','desc').limit(500));
+  sub('mermas', db.collection('mermas').orderBy('fecha','desc').limit(300));
+  sub('recetas', db.collection('recetas'));
+  sub('actividad', db.collection('actividad').orderBy('ts','desc').limit(25));
+  let primeraConfig = true;
+  db.doc('config/general').onSnapshot(s => {
+    S.configExiste = s.exists;
+    if (s.exists) S.config = {...S.config, ...s.data()};
+    if (primeraConfig) { primeraConfig = false; if (!S.quien) setTimeout(() => { if ($('#modal').hidden) modalQuien(); }, 400); }
+    pedirRender();
+  }, () => {});
+  /* Limpieza: borra movimientos de más de 30 días (máx. 20 por visita) */
+  setTimeout(async () => {
+    try {
+      const viejos = await db.collection('actividad').where('ts','<', Date.now() - 30*864e5).limit(20).get();
+      for (const d of viejos.docs) await db.doc('actividad/'+d.id).delete();
+    } catch {}
+  }, 8000);
+}
+(async () => {
+  const cfg = window.CONFIG || {};
+  if (!window.supabase || !cfg.supabaseUrl || !cfg.supabaseAnonKey || /TU_/.test(cfg.supabaseUrl + cfg.supabaseAnonKey)) { S.pantalla = 'config'; render(); return; }
+  sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+  sb.auth.onAuthStateChange((ev, session) => { if (session && !S.db) arrancar(session); });
+  const {data:{session}} = await sb.auth.getSession();
+  if (session) arrancar(session); else { S.pantalla = 'login'; render(); }
+})();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+</script>
+</body>
+</html>

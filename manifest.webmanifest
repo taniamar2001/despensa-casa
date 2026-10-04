@@ -1,0 +1,13 @@
+{
+  "name": "Despensa de la Casa",
+  "short_name": "Despensa",
+  "description": "Inventario de alimentos, aseo y hogar, alertas de vencimiento, lista de mercado y presupuesto familiar.",
+  "lang": "es",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f2f5f0",
+  "theme_color": "#2b6c4a",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
